@@ -1,0 +1,80 @@
+#ifndef PACKET_LIBRARY_H
+#define PACKET_LIBRARY_H
+
+static const char *LOGGING_TAG = "packet_library";
+
+// TypeDefs
+typedef struct {
+    uint16_t frame_control;
+    uint16_t duration_id;
+    uint8_t address_1[6];
+    uint8_t address_2[6];
+    uint8_t address_3[6];
+    uint16_t sequence_control;
+    uint8_t address_4[6];
+    uint8_t *payload;
+} wifi_mac_data_frame_t;
+
+typedef void (* packet_library_simple_callback_t)(wifi_mac_data_frame_t* packet);
+typedef void (* packet_library_frame_control_callback_t)(uint16_t* packet);
+typedef void (* packet_library_duration_id_callback_t)(uint16_t* packet);
+typedef void (* packet_library_address_1_callback_t)(uint8_t* packet);
+typedef void (* packet_library_address_2_callback_t)(uint8_t* packet);
+typedef void (* packet_library_address_3_callback_t)(uint8_t* packet);
+typedef void (* packet_library_address_4_callback_t)(uint8_t* packet);
+typedef void (* packet_library_sequence_control_callback_t)(uint16_t* packet);
+
+typedef struct {
+    bool general_callback_is_set;
+    packet_library_simple_callback_t general_callback;
+    bool frame_control_callback_is_set;
+    packet_library_frame_control_callback_t frame_control_callback;
+    bool duration_id_callback_is_set;
+    packet_library_duration_id_callback_t duration_id_callback;
+    bool address_1_callback_is_set;
+    packet_library_address_1_callback_t address_1_callback;
+    bool address_2_callback_is_set;
+    packet_library_address_2_callback_t address_2_callback;
+    bool address_3_callback_is_set;
+    packet_library_address_3_callback_t address_3_callback;
+    bool address_4_callback_is_set;
+    packet_library_address_4_callback_t address_4_callback;
+    bool sequence_control_callback_is_set;
+    packet_library_sequence_control_callback_t sequence_control_callback;
+    // bool payload_callback_is_set;
+    // packet_library_simple_callback_t payload_callback;
+
+} promisc_callback_setup_t;
+
+// Setup/configuration methods
+esp_err_t setup_wifi_simple(); // This or custom version have to be called
+esp_err_t setup_wifi_custom(); 
+esp_err_t setup_sta_default();
+esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback);
+esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
+esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback); 
+
+// Send full control
+esp_err_t send_packet_raw();
+esp_err_t send_packet_simple();
+
+// Individual field callbacks/send options
+esp_err_t set_callback_frame_control(packet_library_frame_control_callback_t simple_callback);
+esp_err_t set_callback_duration_id(packet_library_duration_id_callback_t simple_callback);
+esp_err_t set_callback_address_1(packet_library_address_1_callback_t simple_callback);
+esp_err_t set_callback_address_2(packet_library_address_2_callback_t simple_callback);
+esp_err_t set_callback_address_3(packet_library_address_3_callback_t simple_callback);
+esp_err_t set_callback_address_4(packet_library_address_4_callback_t simple_callback);
+esp_err_t set_callback_sequence_control(packet_library_sequence_control_callback_t simple_callback);
+// TODO add payload callback/send, will need to include data length stuff
+
+esp_err_t set_send_callback();
+esp_err_t set_send_callback_frame_control();
+esp_err_t set_send_callback_duration_id();
+esp_err_t set_send_callback_address_1();
+esp_err_t set_send_callback_address_2();
+esp_err_t set_send_callback_address_3();
+esp_err_t set_send_callback_address_4();
+esp_err_t set_send_callback_sequence_control();
+
+#endif
