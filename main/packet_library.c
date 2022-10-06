@@ -121,9 +121,8 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
     {
         return ESP_ERR_WIFI_IF;
     }
-    int length = sizeof(packet) - sizeof(uint8_t *) + payload_length;
+    int length = sizeof(packet) - sizeof(uint8_t *) + payload_length; // TODO: Double check that this is the correct math
     // Do the simple callback and then each individual callback action
-    // TODO: Update these for send
     if (send_callback_setup.general_callback_is_set)
     {
         send_callback_setup.general_callback(packet);

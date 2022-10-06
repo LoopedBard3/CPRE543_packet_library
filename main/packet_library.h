@@ -55,6 +55,7 @@ typedef struct {
 esp_err_t setup_wifi_simple(); // This or custom version have to be called
 esp_err_t setup_wifi_custom(wifi_init_config_t config); 
 esp_err_t setup_sta_default();
+esp_err_t setup_packets_filter(); // TODO: Sets what packets we actually care about (i.e. ones just to us)
 esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback);
 esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
 esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback); 
