@@ -2,6 +2,8 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "packet_library.h"
+#include <stdio.h>
+#include <string.h>
 
 // Private helper static types
 static callback_setup_t promisc_callback_setup;
@@ -11,10 +13,24 @@ static configuration_settings_t configuration_holder;
 // Private Helper functions
 static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 {
-    ESP_LOGI(LOGGING_TAG, "START SIMPLE POMISC CALLBACK");
+    ESP_LOGI(LOGGING_TAG, "START SIMPLE PROMISC CALLBACK");
     wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
-    //int length = pkt->rx_ctrl.sig_len; // TODO: Use for the payload callback
+    int frame_length = pkt->rx_ctrl.sig_len;
     wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
+
+    if(promisc_callback_setup.precallback_print != DISABLE)
+    {
+        ESP_LOGI(LOGGING_TAG, "PROMISC PRE-CALLBACK PRINT START");
+        if(promisc_callback_setup.precallback_print == ANNOTATED)
+        {
+            log_packet_annotated(frame, frame_length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t), LOGGING_TAG);
+        } 
+        else if(promisc_callback_setup.precallback_print == HEX)
+        {
+            log_packet_hex(frame, frame_length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t), LOGGING_TAG);
+        }
+        ESP_LOGI(LOGGING_TAG, "PROMISC PRE-CALLBACK PRINT END");
+    }
 
     // Do the simple callback and then each individual callback action
     if (promisc_callback_setup.general_callback_is_set)
@@ -49,9 +65,30 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
     {
         promisc_callback_setup.address_4_callback(frame->address_4);
     }
+    if (promisc_callback_setup.payload_callback_is_set)
+    {
+        int payload_length = frame_length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t);
+        promisc_callback_setup.payload_callback(frame->payload, payload_length);
+    }
+
+    if(promisc_callback_setup.postcallback_print != DISABLE)
+    {
+        ESP_LOGI(LOGGING_TAG, "PROMISC POST-CALLBACK PRINT START");
+        if(promisc_callback_setup.postcallback_print == ANNOTATED)
+        {
+            log_packet_annotated(frame, frame_length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t), LOGGING_TAG);
+        } 
+        else if(promisc_callback_setup.postcallback_print == HEX)
+        {
+            log_packet_hex(frame, frame_length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t), LOGGING_TAG);
+        }
+        ESP_LOGI(LOGGING_TAG, "PROMISC POST-CALLBACK PRINT END");
+    }
 }
 
+// **************************************************
 // Setup/configuration methods
+// **************************************************
 esp_err_t setup_wifi_simple()
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -75,6 +112,12 @@ esp_err_t setup_sta_default()
     ESP_ERROR_CHECK(esp_wifi_start());
     configuration_holder.wifi_interface = WIFI_IF_STA;
     configuration_holder.wifi_interface_set = true;
+    return ESP_OK;
+}
+
+esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter)
+{ 
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_ctrl_filter(type_filter));
     return ESP_OK;
 }
 
@@ -103,7 +146,15 @@ esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_c
     return setup_promiscuous_simple();
 }
 
-// Send and receive full control
+esp_err_t remove_promiscuous_general_callback()
+{
+    promisc_callback_setup.general_callback_is_set = false;
+    return ESP_OK;
+}
+
+// **************************************************
+// Send Packet Methods
+// **************************************************
 esp_err_t send_packet_raw(const void* buffer, int length, bool en_sys_seq)
 {
     if(configuration_holder.wifi_interface_set != true)
@@ -121,7 +172,22 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
     {
         return ESP_ERR_WIFI_IF;
     }
-    int length = sizeof(packet) - sizeof(uint8_t *) + payload_length; // TODO: Double check that this is the correct math
+    int length = sizeof(packet) - sizeof(uint8_t *) + payload_length;
+
+    if(send_callback_setup.precallback_print != DISABLE)
+    {
+        ESP_LOGI(LOGGING_TAG, "SEND PRE-CALLBACK PRINT START");
+        if(send_callback_setup.precallback_print == ANNOTATED)
+        {
+            log_packet_annotated(packet, payload_length, LOGGING_TAG);
+        } 
+        else if(send_callback_setup.precallback_print == HEX)
+        {
+            log_packet_hex(packet, payload_length, LOGGING_TAG);
+        }
+        ESP_LOGI(LOGGING_TAG, "SEND PRE-CALLBACK PRINT END");
+    }
+
     // Do the simple callback and then each individual callback action
     if (send_callback_setup.general_callback_is_set)
     {
@@ -155,14 +221,32 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
     {
         send_callback_setup.address_4_callback(packet->address_4);
     }
+    if (send_callback_setup.payload_callback_is_set)
+    {
+        send_callback_setup.payload_callback(packet->payload, payload_length);
+    }
+
+    if(send_callback_setup.postcallback_print != DISABLE)
+    {
+        ESP_LOGI(LOGGING_TAG, "SEND POST-CALLBACK PRINT START");
+        if(send_callback_setup.postcallback_print == ANNOTATED)
+        {
+            log_packet_annotated(packet, payload_length, LOGGING_TAG);
+        } 
+        else if(send_callback_setup.postcallback_print == HEX)
+        {
+            log_packet_hex(packet, payload_length, LOGGING_TAG);
+        }
+        ESP_LOGI(LOGGING_TAG, "SEND POST-CALLBACK PRINT END");
+    }
+
     esp_wifi_80211_tx(configuration_holder.wifi_interface, (void *)packet, length, false);
     return ESP_OK;
 }
 
 // **************************************************
-// Receive callback methods
+// Receive Callback Methods
 // **************************************************
-
 esp_err_t set_receive_callback_frame_control(packet_library_frame_control_callback_t simple_callback)
 {
     promisc_callback_setup.frame_control_callback = simple_callback;
@@ -212,6 +296,24 @@ esp_err_t set_receive_callback_sequence_control(packet_library_sequence_control_
     return ESP_OK;
 }
 
+esp_err_t set_receive_callback_payload(packet_library_payload_callback_t simple_callback){
+    promisc_callback_setup.payload_callback = simple_callback;
+    promisc_callback_setup.payload_callback_is_set = true;
+    return ESP_OK;
+}
+
+esp_err_t set_receive_pre_callback_print(enum callback_print_option option)
+{
+    promisc_callback_setup.precallback_print = option;
+    return ESP_OK;
+}
+
+esp_err_t set_receive_post_callback_print(enum callback_print_option option)
+{
+    promisc_callback_setup.postcallback_print = option;
+    return ESP_OK;
+}
+
 esp_err_t remove_receive_callback_frame_control()
 {
     promisc_callback_setup.frame_control_callback_is_set = false;
@@ -254,9 +356,14 @@ esp_err_t remove_receive_callback_sequence_control()
     return ESP_OK;
 }
 
+esp_err_t remove_receive_callback_payload()
+{
+    promisc_callback_setup.payload_callback_is_set = false;
+    return ESP_OK;
+}
 
 // **************************************************
-// Send callback methods
+// Send Callback Methods
 // **************************************************
 
 esp_err_t set_send_callback_frame_control(packet_library_frame_control_callback_t simple_callback)
@@ -308,6 +415,25 @@ esp_err_t set_send_callback_sequence_control(packet_library_sequence_control_cal
     return ESP_OK;
 }
 
+esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_callback)
+{
+    send_callback_setup.payload_callback = simple_callback;
+    send_callback_setup.payload_callback_is_set = true;
+    return ESP_OK;
+}
+
+esp_err_t set_send_pre_callback_print(enum callback_print_option option)
+{
+    send_callback_setup.precallback_print = option;
+    return ESP_OK;
+}
+
+esp_err_t set_send_post_callback_print(enum callback_print_option option)
+{
+    send_callback_setup.postcallback_print = option;
+    return ESP_OK;
+}
+
 esp_err_t remove_send_callback_frame_control()
 {
     send_callback_setup.frame_control_callback_is_set = false;
@@ -350,4 +476,60 @@ esp_err_t remove_send_callback_sequence_control()
     return ESP_OK;
 }
 
+esp_err_t remove_send_callback_payload()
+{
+    send_callback_setup.payload_callback_is_set = false;
+    return ESP_OK;
+}
 
+// **************************************************
+// General Helper Methods
+// **************************************************
+esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG)
+{
+    ESP_LOGI(TAG, "Frame Control: %04X\nDuration_ID: %04X\nPacket Addr1: %02X:%02X:%02X:%02X:%02X:%02X\nAddr2: %02X:%02X:%02X:%02X:%02X:%02X\nAddr3 %02X:%02X:%02X:%02X:%02X:%02X\nSequence Control: %04X\nAddr4 %02X:%02X:%02X:%02X:%02X:%02X",
+        packet->frame_control, packet->duration_id,
+        packet->address_1[0],packet->address_1[1], packet->address_1[2], packet->address_1[3], packet->address_1[4], packet->address_1[5],
+        packet->address_2[0], packet->address_2[1], packet->address_2[2], packet->address_2[3], packet->address_2[4], packet->address_2[5],
+        packet->address_3[0], packet->address_3[1], packet->address_3[2], packet->address_3[3], packet->address_3[4], packet->address_3[5],
+        packet->sequence_control,
+        packet->address_4[0], packet->address_4[1], packet->address_4[2], packet->address_4[3], packet->address_4[4], packet->address_4[5]
+    );
+    char* payload_buffer = (char*)malloc(payload_length*2); // Times 2 for 2 hex per byte
+    char temp_buffer[3];
+    // Generate the payload string
+    for(int counter = 0; counter < payload_length; counter++)
+    {
+        snprintf(temp_buffer, 3, "%2X", packet->payload[counter*2]);
+        memmove(&payload_buffer[counter*2], &packet->payload[counter*2], 2);
+    }
+
+    ESP_LOGI(TAG, "Payload: %.*s", payload_length, payload_buffer);
+    free(payload_buffer);
+    return ESP_OK;    
+}
+
+esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG)
+{
+    ESP_LOGI(TAG, "%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%04X%02X%02X%02X%02X%02X%02X",
+        packet->frame_control, packet->duration_id,
+        packet->address_1[0],packet->address_1[1], packet->address_1[2], packet->address_1[3], packet->address_1[4], packet->address_1[5],
+        packet->address_2[0], packet->address_2[1], packet->address_2[2], packet->address_2[3], packet->address_2[4], packet->address_2[5],
+        packet->address_3[0], packet->address_3[1], packet->address_3[2], packet->address_3[3], packet->address_3[4], packet->address_3[5],
+        packet->sequence_control,
+        packet->address_4[0], packet->address_4[1], packet->address_4[2], packet->address_4[3], packet->address_4[4], packet->address_4[5]
+    );
+    char* payload_buffer = (char*)malloc(payload_length*2); // Times 2 for 2 hex per byte
+    char temp_buffer[3];
+    // Generate the payload string
+    for(int counter = 0; counter < payload_length; counter++)
+    {
+        snprintf(temp_buffer, 3, "%2X", packet->payload[counter*2]);
+        memmove(&payload_buffer[counter*2], &packet->payload[counter*2], 2);
+    }
+
+    ESP_LOGI(TAG, "%.*s", payload_length, payload_buffer);
+    free(payload_buffer);
+    return ESP_OK;    
+    return ESP_OK;    
+}

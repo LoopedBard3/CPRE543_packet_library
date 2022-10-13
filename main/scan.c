@@ -21,52 +21,59 @@
 #define RECEIVER true
 
 
-static const char *TAG = "scan";
+//static const char *TAG = "scan";
 
-static void promisc_callback(void *buf, wifi_promiscuous_pkt_type_t type)
-{
-    wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
-    int length = pkt->rx_ctrl.sig_len;
-    wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
-    printf("Printing inside callback.");
-    if(type == WIFI_PKT_MGMT)
-    {
-        ESP_LOGI(TAG, "Management packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);
-    }
-    else if(type == WIFI_PKT_CTRL)
-    { 
-        ESP_LOGI(TAG, "Control packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
-    }
-    else if(type == WIFI_PKT_DATA)
-    { 
-        ESP_LOGI(TAG, "Data packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
-    }
-    else if(type == WIFI_PKT_MISC)
-    { 
-        ESP_LOGI(TAG, "Miscellaneous packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
-    }
-    else
-    { 
-        ESP_LOGI(TAG, "Unknown packet type, Length: %d", length);        
-    }
+// static void promisc_callback(void *buf, wifi_promiscuous_pkt_type_t type)
+// {
+//     wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
+//     int length = pkt->rx_ctrl.sig_len;
+//     wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
+//     printf("Printing inside callback.");
+//     if(type == WIFI_PKT_MGMT)
+//     {
+//         ESP_LOGI(TAG, "Management packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);
+//     }
+//     else if(type == WIFI_PKT_CTRL)
+//     { 
+//         ESP_LOGI(TAG, "Control packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
+//     }
+//     else if(type == WIFI_PKT_DATA)
+//     { 
+//         ESP_LOGI(TAG, "Data packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
+//     }
+//     else if(type == WIFI_PKT_MISC)
+//     { 
+//         ESP_LOGI(TAG, "Miscellaneous packet, Length: %d, First 64: %" PRIu64 "", length, (uint64_t) pkt->payload);        
+//     }
+//     else
+//     { 
+//         ESP_LOGI(TAG, "Unknown packet type, Length: %d", length);        
+//     }
     
-    ESP_LOGI(TAG, "Frame Control: %hhu, Packet Addr1: %02x:%02x:%02x:%02x:%02x:%02x, Addr2: %02x:%02x:%02x:%02x:%02x:%02x, Addr3 %02x:%02x:%02x:%02x:%02x:%02x, Addr4 %02x:%02x:%02x:%02x:%02x:%02x.", frame->frame_control,
-        frame->address_1[0], frame->address_1[1], frame->address_1[2], frame->address_1[3], frame->address_1[4], frame->address_1[5],
-        frame->address_2[0], frame->address_2[1], frame->address_2[2], frame->address_2[3], frame->address_2[4], frame->address_2[5],
-        frame->address_3[0], frame->address_3[1], frame->address_3[2], frame->address_3[3], frame->address_3[4], frame->address_3[5],
-        frame->address_4[0], frame->address_4[1], frame->address_4[2], frame->address_4[3], frame->address_4[4], frame->address_4[5]
-    );    
-}
+//     ESP_LOGI(TAG, "MAIN: Frame Control: %hhu, Packet Addr1: %02x:%02x:%02x:%02x:%02x:%02x, Addr2: %02x:%02x:%02x:%02x:%02x:%02x, Addr3 %02x:%02x:%02x:%02x:%02x:%02x, Addr4 %02x:%02x:%02x:%02x:%02x:%02x.", frame->frame_control,
+//         frame->address_1[0], frame->address_1[1], frame->address_1[2], frame->address_1[3], frame->address_1[4], frame->address_1[5],
+//         frame->address_2[0], frame->address_2[1], frame->address_2[2], frame->address_2[3], frame->address_2[4], frame->address_2[5],
+//         frame->address_3[0], frame->address_3[1], frame->address_3[2], frame->address_3[3], frame->address_3[4], frame->address_3[5],
+//         frame->address_4[0], frame->address_4[1], frame->address_4[2], frame->address_4[3], frame->address_4[4], frame->address_4[5]
+//     );
+//     ESP_LOGI(TAG, "Annotated Packet Format:");
+//     log_packet_annotated(frame, length - sizeof(wifi_mac_data_frame_t) - sizeof(uint8_t), TAG);    
+// }
 
-/* Initialize Wi-Fi as sta and set scan method */
-static void wifi_scan(void)
+/* Library test method */
+static void library_test(void)
 {
     setup_wifi_simple();
 
-    if(RECEIVER){
-        ESP_ERROR_CHECK(setup_promiscuous_default(&promisc_callback));
+    if(RECEIVER)// TODO for library
+    {
+        ESP_ERROR_CHECK(set_receive_pre_callback_print(ANNOTATED));
+        ESP_ERROR_CHECK(set_receive_post_callback_print(ANNOTATED));
+        // TODO Individual field callbacks and general callback
+        ESP_ERROR_CHECK(setup_promiscuous_simple());
     }
-    if(SENDER){
+    if(SENDER)// TODO
+    {
         setup_sta_default();
         wifi_mac_data_frame_t pkt_format = {
             .frame_control = 0b10000000,
@@ -83,15 +90,15 @@ static void wifi_scan(void)
         ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
         while(true){
             esp_wifi_80211_tx(WIFI_IF_STA, (void *)&pkt_format, length, false);
-            ESP_LOGI(TAG, "PACKET SENT");
-            ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            ESP_LOGI(LOGGING_TAG, "PACKET SENT");
+            ESP_LOGI(LOGGING_TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
         }
     }
 }
 
 void app_main(void)
 {
-    // Initialize NVS
+    // Initialize NVS (Not part of wifi library functionality)
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -99,5 +106,5 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    wifi_scan();
+    library_test();
 }
