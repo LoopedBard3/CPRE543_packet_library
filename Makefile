@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := scan
+PROJECT_NAME := library_test
 
 include $(IDF_PATH)/make/project.mk
