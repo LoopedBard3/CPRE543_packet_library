@@ -17,7 +17,7 @@ typedef struct {
     uint8_t address_3[6];
     uint16_t sequence_control;
     uint8_t address_4[6];
-    uint8_t *payload;
+    uint8_t payload[];
 } wifi_mac_data_frame_t;
 
 enum callback_print_option { DISABLE, ANNOTATED, HEX };
