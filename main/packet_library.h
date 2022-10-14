@@ -25,12 +25,12 @@ enum callback_print_option { DISABLE, ANNOTATED, HEX };
 typedef void (* packet_library_simple_callback_t)(wifi_mac_data_frame_t* packet);
 typedef void (* packet_library_frame_control_callback_t)(uint16_t* frame_control);
 typedef void (* packet_library_duration_id_callback_t)(uint16_t* duration_id);
-typedef void (* packet_library_address_1_callback_t)(uint8_t* address_1);
-typedef void (* packet_library_address_2_callback_t)(uint8_t* address_2);
-typedef void (* packet_library_address_3_callback_t)(uint8_t* address_3);
-typedef void (* packet_library_address_4_callback_t)(uint8_t* address_4);
+typedef void (* packet_library_address_1_callback_t)(uint8_t address_1[6]);
+typedef void (* packet_library_address_2_callback_t)(uint8_t address_2[6]);
+typedef void (* packet_library_address_3_callback_t)(uint8_t address_3[6]);
+typedef void (* packet_library_address_4_callback_t)(uint8_t address_4[6]);
 typedef void (* packet_library_sequence_control_callback_t)(uint16_t* sequence_control);
-typedef void (* packet_library_payload_callback_t)(uint8_t* payload, int payload_length);
+typedef void (* packet_library_payload_callback_t)(uint8_t payload[], int payload_length);
 
 typedef struct {
     bool general_callback_is_set;

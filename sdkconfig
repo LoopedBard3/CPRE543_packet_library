@@ -135,8 +135,6 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Configuration
 #
-CONFIG_CHANNEL=10
-# end of Configuration
 
 #
 # Compiler options
