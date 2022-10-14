@@ -28,7 +28,7 @@ static void library_test(void)
     if(RECEIVER)// TODO for library
     {
         ESP_ERROR_CHECK(set_receive_pre_callback_print(ANNOTATED));
-        //ESP_ERROR_CHECK(set_receive_post_callback_print(ANNOTATED));
+        ESP_ERROR_CHECK(set_receive_post_callback_print(HEX));
         wifi_promiscuous_filter_t packet_filter = {
             .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA
         };

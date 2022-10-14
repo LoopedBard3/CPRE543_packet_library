@@ -557,7 +557,7 @@ esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, cons
         //ESP_LOGI(LOGGING_TAG, "C: %d, A: %u, D: 0x%02X, DM: 0x%02X, S: %c%c", counter, (int)&packet->payload[counter], packet->payload[counter], (int)payload_buffer[counter*2], payload_buffer[counter*2], payload_buffer[counter*2+1]);
     }
 
-    ESP_LOGI(TAG, "%.*s", payload_length, payload_buffer);
+    ESP_LOGI(TAG, "%.*s", payload_length*2, payload_buffer);
     free(payload_buffer);
     return ESP_OK;    
 }
