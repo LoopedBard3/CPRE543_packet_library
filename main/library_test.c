@@ -111,7 +111,7 @@ static void library_test(void)
         uint8_t mac[6];
         setup_sta_default();
         ESP_ERROR_CHECK(set_send_pre_callback_print(ANNOTATED));
-        //ESP_ERROR_CHECK(set_send_post_callback_print(ANNOTATED));
+        ESP_ERROR_CHECK(set_send_post_callback_print(ANNOTATED));
         ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
         uint8_t payload[6] = { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55 };
         int payload_length = 6;
@@ -130,14 +130,14 @@ static void library_test(void)
 
         if(DO_INDIVIDUAL_CALLBACK_TEST)
         {
-            //ESP_ERROR_CHECK(set_receive_callback_frame_control(&double_frame_control_callback));
-            ESP_ERROR_CHECK(set_receive_callback_duration_id(&double_duration_id_callback));
-            ESP_ERROR_CHECK(set_receive_callback_address_1(&double_address_1_callback));
-            ESP_ERROR_CHECK(set_receive_callback_address_2(&double_address_2_callback));
-            ESP_ERROR_CHECK(set_receive_callback_address_3(&double_address_3_callback));
-            ESP_ERROR_CHECK(set_receive_callback_address_4(&double_address_4_callback));
-            ESP_ERROR_CHECK(set_receive_callback_sequence_control(&double_sequence_control_callback));
-            ESP_ERROR_CHECK(set_receive_callback_payload(&payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
+            //ESP_ERROR_CHECK(set_send_callback_frame_control(&double_frame_control_callback));
+            ESP_ERROR_CHECK(set_send_callback_duration_id(&double_duration_id_callback));
+            ESP_ERROR_CHECK(set_send_callback_address_1(&double_address_1_callback));
+            ESP_ERROR_CHECK(set_send_callback_address_2(&double_address_2_callback));
+            ESP_ERROR_CHECK(set_send_callback_address_3(&double_address_3_callback));
+            ESP_ERROR_CHECK(set_send_callback_address_4(&double_address_4_callback));
+            ESP_ERROR_CHECK(set_send_callback_sequence_control(&double_sequence_control_callback));
+            ESP_ERROR_CHECK(set_send_callback_payload(&payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
         }
 
         if(DO_GENERAL_CALLBACK_TEST)
