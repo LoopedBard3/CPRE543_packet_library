@@ -130,7 +130,7 @@ static void library_test(void)
 
         if(DO_INDIVIDUAL_CALLBACK_TEST)
         {
-            ESP_ERROR_CHECK(set_receive_callback_frame_control(&double_frame_control_callback));
+            //ESP_ERROR_CHECK(set_receive_callback_frame_control(&double_frame_control_callback));
             ESP_ERROR_CHECK(set_receive_callback_duration_id(&double_duration_id_callback));
             ESP_ERROR_CHECK(set_receive_callback_address_1(&double_address_1_callback));
             ESP_ERROR_CHECK(set_receive_callback_address_2(&double_address_2_callback));

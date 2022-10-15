@@ -99,7 +99,7 @@ esp_err_t set_send_callback_address_2(packet_library_address_2_callback_t simple
 esp_err_t set_send_callback_address_3(packet_library_address_3_callback_t simple_callback);
 esp_err_t set_send_callback_address_4(packet_library_address_4_callback_t simple_callback);
 esp_err_t set_send_callback_sequence_control(packet_library_sequence_control_callback_t simple_callback);
-esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_callback);
+esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_callback); // TODO: Add payload callback that also passes payload length?
 esp_err_t set_send_pre_callback_print(enum callback_print_option option);
 esp_err_t set_send_post_callback_print(enum callback_print_option option);
 
