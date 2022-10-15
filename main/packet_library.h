@@ -114,5 +114,6 @@ esp_err_t remove_send_callback_payload();
 // General Helper Methods
 esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
 esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
+wifi_mac_data_frame_t* alloc_packet_default(int payload_length);
 
 #endif

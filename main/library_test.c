@@ -25,7 +25,7 @@
 static void double_general_callback(wifi_mac_data_frame_t* packet)
 {
     packet->duration_id = packet->duration_id * 2;
-    ESP_LOGI(LOGGING_TAG, "CB: G, O DI: %d", packet->duration_id);
+    ESP_LOGI(LOGGING_TAG, "CB: G, O DI: %04X", packet->duration_id);
 }
 static void double_frame_control_callback(uint16_t* frame_control)
 {
