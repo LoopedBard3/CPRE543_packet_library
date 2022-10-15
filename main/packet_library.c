@@ -40,7 +40,6 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
     ESP_LOGI(LOGGING_TAG, "START SIMPLE PROMISC CALLBACK");
     const wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
     int payload_length = pkt->rx_ctrl.sig_len - sizeof(wifi_promiscuous_pkt_t);
-    ESP_LOGI(LOGGING_TAG, "FRAME_LENGTH = %d", pkt->rx_ctrl.sig_len);
     wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
 
     //print_packet_type_testing(type);
@@ -520,18 +519,15 @@ esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length
         packet->sequence_control,
         packet->address_4[0], packet->address_4[1], packet->address_4[2], packet->address_4[3], packet->address_4[4], packet->address_4[5]
     );
-    //ESP_LOGI(LOGGING_TAG, "Free: %d\t", heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
-    //heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
     if(payload_length){
         uint8_t* payload_buffer = (uint8_t*)malloc(payload_length*2); // Times 2 for 2 hex per byte
-        //ESP_LOGI(LOGGING_TAG, "PACKET START = %u, PAYLOAD_BUFFER ADDRESS %u, PAYLOAD_LENGTH %d", (int)packet, (int)payload_buffer, payload_length);
         char temp_buffer[3];
         // // Generate the payload string
         for(int counter = 0; counter < payload_length; counter++)
         {
             snprintf(temp_buffer, 3, "%02X", (packet->payload)[counter]);
             memcpy(&payload_buffer[counter*2], temp_buffer, 2);
-            //ESP_LOGI(LOGGING_TAG, "C: %d, A: %u, D: 0x%02X, DM: 0x%02X, S: %c%c", counter, (int)&packet->payload[counter], packet->payload[counter], (int)payload_buffer[counter*2], payload_buffer[counter*2], payload_buffer[counter*2+1]);
         }
 
         ESP_LOGI(TAG, "Payload: 0x%.*s", payload_length*2, payload_buffer);
@@ -553,14 +549,12 @@ esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, cons
     
     if(payload_length){
         uint8_t* payload_buffer = (uint8_t*)malloc(payload_length*2); // Times 2 for 2 hex per byte
-        //ESP_LOGI(LOGGING_TAG, "PACKET START = %u, PAYLOAD_BUFFER ADDRESS %u, PAYLOAD_LENGTH %d", (int)packet, (int)payload_buffer, payload_length);
         char temp_buffer[3];
         // // Generate the payload string
         for(int counter = 0; counter < payload_length; counter++)
         {
             snprintf(temp_buffer, 3, "%02X", packet->payload[counter]);
             memcpy(&payload_buffer[counter*2], temp_buffer, 2);
-            //ESP_LOGI(LOGGING_TAG, "C: %d, A: %u, D: 0x%02X, DM: 0x%02X, S: %c%c", counter, (int)&packet->payload[counter], packet->payload[counter], (int)payload_buffer[counter*2], payload_buffer[counter*2], payload_buffer[counter*2+1]);
         }
 
         ESP_LOGI(TAG, "%.*s", payload_length*2, payload_buffer);
