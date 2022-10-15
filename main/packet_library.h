@@ -66,7 +66,7 @@ esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_c
 esp_err_t remove_promiscuous_general_callback(); //TODO? Add generic set general callback that is also used by ^?
 
 // Send full control
-esp_err_t send_packet_raw(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
+esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
 esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
 
 // Individual field callbacks/send options
@@ -114,6 +114,8 @@ esp_err_t remove_send_callback_payload();
 // General Helper Methods
 esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
 esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
+wifi_mac_data_frame_t* alloc_packet_custom(uint16_t frame_control, uint16_t duration_id, uint8_t address_1[6], uint8_t address_2[6], uint8_t address_3[6], uint16_t sequence_control, uint8_t address_4[6], int payload_length, uint8_t* payload);
+wifi_mac_data_frame_t* alloc_packet_default_payload(int payload_length, uint8_t *payload);
 wifi_mac_data_frame_t* alloc_packet_default(int payload_length);
 
 #endif

@@ -11,14 +11,15 @@
     This example shows how to scan for available set of APs.
 */
 #include <string.h>
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_event.h"
+#include <esp_wifi.h>
+#include <esp_task_wdt.h>
+#include <esp_log.h>
+#include <esp_event.h>
 #include "nvs_flash.h"
 #include "packet_library.h"
 
-#define SENDER false
-#define RECEIVER true
+#define SENDER true
+#define RECEIVER !SENDER
 #define DO_GENERAL_CALLBACK_TEST true
 #define DO_INDIVIDUAL_CALLBACK_TEST true
 
@@ -76,7 +77,7 @@ static void library_test(void)
 {
     setup_wifi_simple();
 
-    if(RECEIVER) // TODO for library
+    if(RECEIVER) // TODO: Debug possible memory leak?
     {
         ESP_ERROR_CHECK(set_receive_pre_callback_print(ANNOTATED));
         ESP_ERROR_CHECK(set_receive_post_callback_print(ANNOTATED));
@@ -93,7 +94,7 @@ static void library_test(void)
             ESP_ERROR_CHECK(set_receive_callback_address_3(&double_address_3_callback));
             ESP_ERROR_CHECK(set_receive_callback_address_4(&double_address_4_callback));
             ESP_ERROR_CHECK(set_receive_callback_sequence_control(&double_sequence_control_callback));
-            ESP_ERROR_CHECK(set_receive_callback_payload(&promisc_payload_callback));
+            ESP_ERROR_CHECK(set_receive_callback_payload(&promisc_payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
         }
 
         if(DO_GENERAL_CALLBACK_TEST)
@@ -107,28 +108,31 @@ static void library_test(void)
     }
     if(SENDER) // TODO
     {
-        setup_sta_default();
-        wifi_mac_data_frame_t* pkt_format = calloc(1, sizeof(wifi_mac_data_frame_t) + 8);
-        
-        pkt_format->frame_control = 0b10000000;
-        pkt_format->duration_id = 2;
-        uint8_t add1[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
-        memcpy(pkt_format->address_1, add1, sizeof(add1));
-        uint8_t add2[6] = { 0x10, 0x12, 0x12, 0x13, 0x14, 0x15 };
-        memcpy(pkt_format->address_2, add2, sizeof(add2));
-        uint8_t add3[6] = { 0x10, 0x13, 0x12, 0x13, 0x14, 0x15 };
-        memcpy(pkt_format->address_3, add3, sizeof(add3));
-        pkt_format->sequence_control = 0;
-        uint8_t add4[6] = { 0x10, 0x14, 0x12, 0x13, 0x14, 0x15 };
-        memcpy(pkt_format->address_4, add4, sizeof(add4));
-        strcpy((char *)pkt_format->payload, "TESTING");
-        int length = sizeof(wifi_mac_data_frame_t) + 8;
         uint8_t mac[6];
+        setup_sta_default();
+        ESP_ERROR_CHECK(set_send_pre_callback_print(ANNOTATED));
+        //ESP_ERROR_CHECK(set_send_post_callback_print(ANNOTATED));
         ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
+        uint8_t payload[6] = { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55 };
+        int payload_length = 6;
+        wifi_mac_data_frame_t* pkt = alloc_packet_custom(
+            0x0008, //  bits are read in opposite order 
+            4, 
+            (uint8_t []){ 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 },
+            (uint8_t []){ 0x20, 0x21, 0x22, 0x23, 0x24, 0x25 },
+            (uint8_t []){ 0x30, 0x31, 0x32, 0x33, 0x34, 0x35 },
+            7,
+            (uint8_t []){ 0x40, 0x41, 0x42, 0x43, 0x44, 0x45 },
+            payload_length,
+            payload
+        );
+        const TickType_t xDelay = 10 / portTICK_PERIOD_MS; 
+    
         while(true){
-            esp_wifi_80211_tx(WIFI_IF_STA, (void *)&pkt_format, length, false);
+            send_packet_simple(pkt, payload_length);
             ESP_LOGI(LOGGING_TAG, "PACKET SENT");
-            ESP_LOGI(LOGGING_TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            ESP_LOGI(LOGGING_TAG, "MAC: %02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            vTaskDelay( xDelay );
         }
     }
 }
