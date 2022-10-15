@@ -63,9 +63,9 @@ static void double_address_4_callback(uint8_t address_4[6])
     address_4[1] = address_4[0] * 2;    
     ESP_LOGI(LOGGING_TAG, "CB: A4, NV: %02X", address_4[1]);
 }
-static void promisc_payload_callback(uint8_t payload[], int payload_length)
+static void payload_callback(uint8_t payload[], int payload_length)
 {
-    if(payload_length > 10)
+    if(payload_length > 3)
     {
         payload[3] = 255;
     }
@@ -94,7 +94,7 @@ static void library_test(void)
             ESP_ERROR_CHECK(set_receive_callback_address_3(&double_address_3_callback));
             ESP_ERROR_CHECK(set_receive_callback_address_4(&double_address_4_callback));
             ESP_ERROR_CHECK(set_receive_callback_sequence_control(&double_sequence_control_callback));
-            ESP_ERROR_CHECK(set_receive_callback_payload(&promisc_payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
+            ESP_ERROR_CHECK(set_receive_callback_payload(&payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
         }
 
         if(DO_GENERAL_CALLBACK_TEST)
@@ -126,12 +126,29 @@ static void library_test(void)
             payload_length,
             payload
         );
+
+
+        if(DO_INDIVIDUAL_CALLBACK_TEST)
+        {
+            ESP_ERROR_CHECK(set_receive_callback_frame_control(&double_frame_control_callback));
+            ESP_ERROR_CHECK(set_receive_callback_duration_id(&double_duration_id_callback));
+            ESP_ERROR_CHECK(set_receive_callback_address_1(&double_address_1_callback));
+            ESP_ERROR_CHECK(set_receive_callback_address_2(&double_address_2_callback));
+            ESP_ERROR_CHECK(set_receive_callback_address_3(&double_address_3_callback));
+            ESP_ERROR_CHECK(set_receive_callback_address_4(&double_address_4_callback));
+            ESP_ERROR_CHECK(set_receive_callback_sequence_control(&double_sequence_control_callback));
+            ESP_ERROR_CHECK(set_receive_callback_payload(&payload_callback)); // Payload includes FCS which is not included in the send setup (explains size disparity)
+        }
+
+        if(DO_GENERAL_CALLBACK_TEST)
+        {
+            ESP_ERROR_CHECK(set_send_callback_general(&double_general_callback));
+        }
+
         const TickType_t xDelay = 10 / portTICK_PERIOD_MS; 
-    
         while(true){
             send_packet_simple(pkt, payload_length);
             ESP_LOGI(LOGGING_TAG, "PACKET SENT");
-            ESP_LOGI(LOGGING_TAG, "MAC: %02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
             vTaskDelay( xDelay );
         }
     }

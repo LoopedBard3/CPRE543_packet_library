@@ -91,6 +91,7 @@ esp_err_t remove_receive_callback_sequence_control();
 esp_err_t remove_receive_callback_payload();
 
 
+esp_err_t set_send_callback_general(packet_library_simple_callback_t simple_callback);
 esp_err_t set_send_callback_frame_control(packet_library_frame_control_callback_t simple_callback);
 esp_err_t set_send_callback_duration_id(packet_library_duration_id_callback_t simple_callback);
 esp_err_t set_send_callback_address_1(packet_library_address_1_callback_t simple_callback);
@@ -102,6 +103,7 @@ esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_cal
 esp_err_t set_send_pre_callback_print(enum callback_print_option option);
 esp_err_t set_send_post_callback_print(enum callback_print_option option);
 
+esp_err_t remove_send_callback_general();
 esp_err_t remove_send_callback_frame_control();
 esp_err_t remove_send_callback_duration_id();
 esp_err_t remove_send_callback_address_1();

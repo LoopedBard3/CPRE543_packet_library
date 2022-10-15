@@ -390,6 +390,13 @@ esp_err_t remove_receive_callback_payload()
 // Send Callback Methods
 // **************************************************
 
+esp_err_t set_send_callback_general(packet_library_simple_callback_t simple_callback)
+{
+    send_callback_setup.general_callback = simple_callback;
+    send_callback_setup.general_callback_is_set = true;
+    return ESP_OK;
+}
+
 esp_err_t set_send_callback_frame_control(packet_library_frame_control_callback_t simple_callback)
 {
     send_callback_setup.frame_control_callback = simple_callback;
@@ -455,6 +462,12 @@ esp_err_t set_send_pre_callback_print(enum callback_print_option option)
 esp_err_t set_send_post_callback_print(enum callback_print_option option)
 {
     send_callback_setup.postcallback_print = option;
+    return ESP_OK;
+}
+
+esp_err_t remove_send_callback_general()
+{
+    send_callback_setup.general_callback_is_set = false;
     return ESP_OK;
 }
 
