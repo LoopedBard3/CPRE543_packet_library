@@ -14,6 +14,7 @@ static const char *LOGGING_TAG = "packet_library";
 typedef struct {
     wifi_interface_t wifi_interface;
     bool wifi_interface_set;
+    bool using_sta_mode;
 } configuration_settings_t;
 
 typedef struct {
@@ -27,7 +28,7 @@ typedef struct {
     uint8_t payload[];
 } wifi_mac_data_frame_t;
 
-enum callback_print_option { DISABLE, ANNOTATED, HEX };
+enum callback_print_option { DISABLE, ANNOTATED, HEX, DENOTE };
 
 typedef void (* packet_library_simple_callback_t)(wifi_mac_data_frame_t* packet, int payload_length);
 typedef void (* packet_library_frame_control_callback_t)(uint16_t* frame_control);
@@ -70,13 +71,17 @@ esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter
 esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback);
 esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
 esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback);
-esp_err_t remove_promiscuous_general_callback(); //TODO? Add generic set general callback that is also used by ^?
+esp_err_t remove_promiscuous_general_callback();
+esp_err_t setup_sta_and_promiscuous_simple();
+esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback);
+esp_err_t switch_between_sta_and_promis(bool to_sta);
 
 // Send full control
 esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
 esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
 
 // Individual field callbacks/send options
+esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback);
 esp_err_t set_receive_callback_frame_control(packet_library_frame_control_callback_t simple_callback);
 esp_err_t set_receive_callback_duration_id(packet_library_duration_id_callback_t simple_callback);
 esp_err_t set_receive_callback_address_1(packet_library_address_1_callback_t simple_callback);
@@ -88,6 +93,7 @@ esp_err_t set_receive_callback_payload(packet_library_payload_callback_t simple_
 esp_err_t set_receive_pre_callback_print(enum callback_print_option option);
 esp_err_t set_receive_post_callback_print(enum callback_print_option option);
 
+esp_err_t remove_receive_callback_general();
 esp_err_t remove_receive_callback_frame_control();
 esp_err_t remove_receive_callback_duration_id();
 esp_err_t remove_receive_callback_address_1();

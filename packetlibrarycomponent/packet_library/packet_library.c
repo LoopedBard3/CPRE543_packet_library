@@ -7,14 +7,13 @@ static configuration_settings_t configuration_holder;
 
 static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 {
-    ESP_LOGI(LOGGING_TAG, "START SIMPLE PROMISC CALLBACK");
     const wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
     int payload_length = pkt->rx_ctrl.sig_len - sizeof(wifi_promiscuous_pkt_t);
     wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
 
     if(promisc_callback_setup.precallback_print != DISABLE)
     {
-        ESP_LOGI(LOGGING_TAG, "PROMISC PRE-CALLBACK PRINT START");
+        ESP_LOGI(LOGGING_TAG, "PROM PRECALL START");
         if(promisc_callback_setup.precallback_print == ANNOTATED)
         {
             log_packet_annotated(frame, payload_length, LOGGING_TAG);
@@ -23,7 +22,7 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
         {
             log_packet_hex(frame, payload_length, LOGGING_TAG);
         }
-        ESP_LOGI(LOGGING_TAG, "PROMISC PRE-CALLBACK PRINT END");
+        ESP_LOGI(LOGGING_TAG, "PROM PRECALL END");
     }
 
     // Do the simple callback and then each individual callback action
@@ -66,7 +65,7 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 
     if(promisc_callback_setup.postcallback_print != DISABLE)
     {
-        ESP_LOGI(LOGGING_TAG, "PROMISC POST-CALLBACK PRINT START");
+        ESP_LOGI(LOGGING_TAG, "PROM POSTCALL PRINT START");
         if(promisc_callback_setup.postcallback_print == ANNOTATED)
         {
             log_packet_annotated(frame, payload_length, LOGGING_TAG);
@@ -75,7 +74,7 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
         {
             log_packet_hex(frame, payload_length, LOGGING_TAG);
         }
-        ESP_LOGI(LOGGING_TAG, "PROMISC POST-CALLBACK PRINT END");
+        ESP_LOGI(LOGGING_TAG, "PROM POSTCALL PRINT END");
     }
 }
 
@@ -105,6 +104,7 @@ esp_err_t setup_sta_default()
     ESP_ERROR_CHECK(esp_wifi_start());
     configuration_holder.wifi_interface = WIFI_IF_STA;
     configuration_holder.wifi_interface_set = true;
+    configuration_holder.using_sta_mode = true;
     return ESP_OK;
 }
 
@@ -145,6 +145,41 @@ esp_err_t remove_promiscuous_general_callback()
     return ESP_OK;
 }
 
+esp_err_t setup_sta_and_promiscuous_simple()
+{
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
+    configuration_holder.wifi_interface = WIFI_IF_STA;
+    configuration_holder.wifi_interface_set = true;
+    configuration_holder.using_sta_mode = true;
+    ESP_ERROR_CHECK(esp_wifi_start());
+    return ESP_OK;
+}
+
+esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback)
+{
+    promisc_callback_setup.general_callback = simple_callback;
+    promisc_callback_setup.general_callback_is_set = true;
+    return setup_sta_and_promiscuous_simple();
+}
+
+esp_err_t switch_between_sta_and_promis(bool use_sta)
+{
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(!use_sta)); // TODO test if anything more than set promiscuous needs to be set // TODO Checkout esp_wifi_connect
+
+    // if(use_sta && !configuration_holder.using_sta_mode)
+    // {
+    //     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+    //     ESP_ERROR_CHECK(esp_wifi_start());
+    // }
+    // else if(!use_sta && configuration_holder.using_sta_mode)
+    // {
+    //     ESP_ERROR_CHECK(esp_wifi_stop());
+    //     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    // }
+    return ESP_OK;
+}
+
 // **************************************************
 // Send Packet Methods
 // **************************************************
@@ -161,7 +196,6 @@ esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sy
 esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length) 
 {
     int length = sizeof(wifi_mac_data_frame_t) + payload_length;
-    ESP_LOGI(LOGGING_TAG, "START SIMPLE SEND PACKET: LENGTH %d", length);
     if(configuration_holder.wifi_interface_set != true)
     {
         return ESP_ERR_WIFI_IF;
@@ -169,7 +203,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
 
     if(send_callback_setup.precallback_print != DISABLE)
     {
-        ESP_LOGI(LOGGING_TAG, "SEND PRE-CALLBACK PRINT START");
+        ESP_LOGI(LOGGING_TAG, "SEND PRECALL START");
         if(send_callback_setup.precallback_print == ANNOTATED)
         {
             log_packet_annotated(packet, payload_length, LOGGING_TAG);
@@ -178,7 +212,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
         {
             log_packet_hex(packet, payload_length, LOGGING_TAG);
         }
-        ESP_LOGI(LOGGING_TAG, "SEND PRE-CALLBACK PRINT END");
+        ESP_LOGI(LOGGING_TAG, "SEND PRECALL END");
     }
 
     // Do the simple callback and then each individual callback action
@@ -221,7 +255,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
 
     if(send_callback_setup.postcallback_print != DISABLE)
     {
-        ESP_LOGI(LOGGING_TAG, "SEND POST-CALLBACK PRINT START");
+        ESP_LOGI(LOGGING_TAG, "SEND POSTCALL START");
         if(send_callback_setup.postcallback_print == ANNOTATED)
         {
             log_packet_annotated(packet, payload_length, LOGGING_TAG);
@@ -230,7 +264,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
         {
             log_packet_hex(packet, payload_length, LOGGING_TAG);
         }
-        ESP_LOGI(LOGGING_TAG, "SEND POST-CALLBACK PRINT END");
+        ESP_LOGI(LOGGING_TAG, "SEND POSTCALL END");
     }
 
     esp_wifi_80211_tx(configuration_holder.wifi_interface, (void *)packet, length, false);
@@ -240,6 +274,13 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
 // **************************************************
 // Receive Callback Methods
 // **************************************************
+esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback)
+{
+    promisc_callback_setup.general_callback = simple_callback;
+    promisc_callback_setup.general_callback_is_set = true;
+    return ESP_OK;
+}
+
 esp_err_t set_receive_callback_frame_control(packet_library_frame_control_callback_t simple_callback)
 {
     promisc_callback_setup.frame_control_callback = simple_callback;
@@ -304,6 +345,12 @@ esp_err_t set_receive_pre_callback_print(enum callback_print_option option)
 esp_err_t set_receive_post_callback_print(enum callback_print_option option)
 {
     promisc_callback_setup.postcallback_print = option;
+    return ESP_OK;
+}
+
+esp_err_t remove_receive_callback_general()
+{
+    promisc_callback_setup.general_callback_is_set = false;
     return ESP_OK;
 }
 
