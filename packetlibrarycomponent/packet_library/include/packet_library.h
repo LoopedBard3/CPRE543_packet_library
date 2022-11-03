@@ -1,3 +1,10 @@
+#include <esp_wifi.h>
+#include <esp_log.h>
+#include <esp_event.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
 #ifndef PACKET_LIBRARY_H
 #define PACKET_LIBRARY_H
 
@@ -22,7 +29,7 @@ typedef struct {
 
 enum callback_print_option { DISABLE, ANNOTATED, HEX };
 
-typedef void (* packet_library_simple_callback_t)(wifi_mac_data_frame_t* packet);
+typedef void (* packet_library_simple_callback_t)(wifi_mac_data_frame_t* packet, int payload_length);
 typedef void (* packet_library_frame_control_callback_t)(uint16_t* frame_control);
 typedef void (* packet_library_duration_id_callback_t)(uint16_t* duration_id);
 typedef void (* packet_library_address_1_callback_t)(uint8_t address_1[6]);

@@ -1,39 +1,9 @@
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_event.h"
 #include "packet_library.h"
-#include <stdio.h>
-#include <string.h>
 
 // Private helper static types
 static callback_setup_t promisc_callback_setup;
 static callback_setup_t send_callback_setup;
 static configuration_settings_t configuration_holder;
-
-// Private Helper functions
-static void print_packet_type_testing(wifi_promiscuous_pkt_type_t type)
-{
-    if(type == WIFI_PKT_MGMT)
-    {
-        ESP_LOGI(LOGGING_TAG, "Management packet");
-    }
-    else if(type == WIFI_PKT_CTRL)
-    { 
-        ESP_LOGI(LOGGING_TAG, "Control packet");        
-    }
-    else if(type == WIFI_PKT_DATA)
-    { 
-        ESP_LOGI(LOGGING_TAG, "Data packet");        
-    }
-    else if(type == WIFI_PKT_MISC)
-    { 
-        ESP_LOGI(LOGGING_TAG, "Miscellaneous packet");        
-    }
-    else
-    { 
-        ESP_LOGI(LOGGING_TAG, "Unknown packet type");        
-    }
-} 
 
 static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 {
@@ -42,7 +12,6 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
     int payload_length = pkt->rx_ctrl.sig_len - sizeof(wifi_promiscuous_pkt_t);
     wifi_mac_data_frame_t *frame = (wifi_mac_data_frame_t *)pkt->payload;
 
-    //print_packet_type_testing(type);
     if(promisc_callback_setup.precallback_print != DISABLE)
     {
         ESP_LOGI(LOGGING_TAG, "PROMISC PRE-CALLBACK PRINT START");
@@ -60,7 +29,7 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
     // Do the simple callback and then each individual callback action
     if (promisc_callback_setup.general_callback_is_set)
     {
-        promisc_callback_setup.general_callback(frame);
+        promisc_callback_setup.general_callback(frame, payload_length);
     }
     if (promisc_callback_setup.frame_control_callback_is_set)
     {
@@ -215,7 +184,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
     // Do the simple callback and then each individual callback action
     if (send_callback_setup.general_callback_is_set)
     {
-        send_callback_setup.general_callback(packet);
+        send_callback_setup.general_callback(packet, payload_length);
     }
     if (send_callback_setup.frame_control_callback_is_set)
     {
