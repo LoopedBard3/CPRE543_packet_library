@@ -104,7 +104,6 @@ esp_err_t setup_sta_default()
     ESP_ERROR_CHECK(esp_wifi_start());
     configuration_holder.wifi_interface = WIFI_IF_STA;
     configuration_holder.wifi_interface_set = true;
-    configuration_holder.using_sta_mode = true;
     return ESP_OK;
 }
 
@@ -151,8 +150,8 @@ esp_err_t setup_sta_and_promiscuous_simple()
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
     configuration_holder.wifi_interface = WIFI_IF_STA;
     configuration_holder.wifi_interface_set = true;
-    configuration_holder.using_sta_mode = true;
     ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
     return ESP_OK;
 }
 
@@ -161,23 +160,6 @@ esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_
     promisc_callback_setup.general_callback = simple_callback;
     promisc_callback_setup.general_callback_is_set = true;
     return setup_sta_and_promiscuous_simple();
-}
-
-esp_err_t switch_between_sta_and_promis(bool use_sta)
-{
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(!use_sta)); // TODO test if anything more than set promiscuous needs to be set // TODO Checkout esp_wifi_connect
-
-    // if(use_sta && !configuration_holder.using_sta_mode)
-    // {
-    //     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
-    //     ESP_ERROR_CHECK(esp_wifi_start());
-    // }
-    // else if(!use_sta && configuration_holder.using_sta_mode)
-    // {
-    //     ESP_ERROR_CHECK(esp_wifi_stop());
-    //     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-    // }
-    return ESP_OK;
 }
 
 // **************************************************

@@ -14,7 +14,6 @@ static const char *LOGGING_TAG = "packet_library";
 typedef struct {
     wifi_interface_t wifi_interface;
     bool wifi_interface_set;
-    bool using_sta_mode;
 } configuration_settings_t;
 
 typedef struct {
@@ -74,7 +73,6 @@ esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_c
 esp_err_t remove_promiscuous_general_callback();
 esp_err_t setup_sta_and_promiscuous_simple();
 esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback);
-esp_err_t switch_between_sta_and_promis(bool to_sta);
 
 // Send full control
 esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
