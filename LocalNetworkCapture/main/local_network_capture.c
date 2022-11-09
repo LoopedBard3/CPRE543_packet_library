@@ -48,7 +48,7 @@ static void scan_general_callback(wifi_mac_data_frame_t* packet, int payload_len
 static void scan_local_network(void)
 {
     // Setup with default WiFi setup
-    setup_wifi_simple();
+    setup_wifi_station_simple();
 
     // Setup the esp32 in prmiscuous mode and enable the general packet callback method implemented above
     ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&scan_general_callback));

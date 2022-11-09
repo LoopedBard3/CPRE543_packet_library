@@ -12,8 +12,11 @@ static const char *LOGGING_TAG = "packet_library";
 
 // TypeDefs
 typedef struct {
-    wifi_interface_t wifi_interface;
     bool wifi_interface_set;
+    bool wifi_connected_to_ap;
+    uint8_t mac_addr[6];
+    wifi_interface_t wifi_interface;
+    wifi_ap_record_t connected_ap_record;
 } configuration_settings_t;
 
 typedef struct {
@@ -63,20 +66,30 @@ typedef struct {
 } callback_setup_t;
 
 // Setup/configuration methods
-esp_err_t setup_wifi_simple(); // This or custom version have to be called
-esp_err_t setup_wifi_custom(wifi_init_config_t config); 
+esp_err_t setup_wifi_station_simple();
+esp_err_t setup_wifi_access_point_simple();
+esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station); 
 esp_err_t setup_sta_default();
 esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter);
 esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback);
 esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
 esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback);
 esp_err_t remove_promiscuous_general_callback();
+esp_err_t set_promiscuous_enabled(bool enable);
 esp_err_t setup_sta_and_promiscuous_simple();
 esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback);
+esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration);
+esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration);
+esp_err_t get_current_mac(uint8_t mac_output_holder[6]);
+esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6]);
+esp_err_t ap_get_current_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder);
 
 // Send full control
 esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
 esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
+esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]);
+esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length); // Do a broadcast
+esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length);
 
 // Individual field callbacks/send options
 esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback);

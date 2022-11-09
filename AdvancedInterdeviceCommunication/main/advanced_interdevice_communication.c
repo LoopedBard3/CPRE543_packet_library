@@ -72,7 +72,7 @@ static void receive_station_general_callback(wifi_mac_data_frame_t* packet, int 
 /* Advanced Communication method */
 static void advanced_interdevice_communication(void)
 {
-    setup_wifi_simple();
+    setup_wifi_station_simple();
     setup_sta_default();
     ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
     ESP_LOGI(LOGGING_TAG, "MAC %02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -103,8 +103,11 @@ static void advanced_interdevice_communication(void)
         );
 
         // Setup sta and promisc capabilities
-        ESP_ERROR_CHECK(set_receive_callback_general(&receive_station_general_callback));
-        ESP_ERROR_CHECK(setup_sta_and_promiscuous_simple());
+
+        ESP_ERROR_CHECK(setup_promiscuous_simple()); // Option to turn on promiscuous listener
+        ESP_ERROR_CHECK(setup_wifi_station_simple());
+        // ESP_ERROR_CHECK(set_receive_callback_general(&receive_station_general_callback));
+        // ESP_ERROR_CHECK(setup_sta_and_promiscuous_simple());
     }
 }
 

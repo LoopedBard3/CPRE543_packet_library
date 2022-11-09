@@ -65,7 +65,7 @@ static void payload_callback(uint8_t payload[], int payload_length)
 static void basic_callbacks(void)
 {
     // Setup with default WiFi setup
-    setup_wifi_simple();
+    setup_wifi_station_simple();
 
     if(RECEIVER)
     {

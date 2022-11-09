@@ -81,23 +81,39 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 // **************************************************
 // Setup/configuration methods
 // **************************************************
-esp_err_t setup_wifi_simple()
+esp_err_t setup_wifi_station_simple()
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    return setup_wifi_custom(cfg);
+    return setup_wifi_custom(cfg, true);
 }
 
-esp_err_t setup_wifi_custom(wifi_init_config_t config)
+esp_err_t setup_wifi_access_point_simple()
+{
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    return setup_wifi_custom(cfg, false);
+}
+
+esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
-    assert(sta_netif);
+    esp_netif_t *netif;
+    if(as_station)
+    {
+        netif = esp_netif_create_default_wifi_sta();
+    }
+    else
+    {
+        netif = esp_netif_create_default_wifi_ap();
+    }
+    assert(netif);
     ESP_ERROR_CHECK(esp_wifi_init(&config));
+    ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, configuration_holder.mac_addr));
     ESP_LOGI(LOGGING_TAG, "WIFI INITIALIZED");
     return ESP_OK;
 }
 
+// TODO: Figure out minimum promis + sta setup necessary
 esp_err_t setup_sta_default()
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -113,6 +129,7 @@ esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter
     return ESP_OK;
 }
 
+// TODO: Figure out minimum promis + sta setup necessary
 esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback)
 {
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(callback));
@@ -122,6 +139,7 @@ esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback)
     return ESP_OK;
 }
 
+// TODO: Figure out minimum promis + sta setup necessary
 esp_err_t setup_promiscuous_simple()
 {
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
@@ -144,12 +162,18 @@ esp_err_t remove_promiscuous_general_callback()
     return ESP_OK;
 }
 
+esp_err_t set_promiscuous_enabled(bool enable)
+{
+    return esp_wifi_set_promiscuous(true);
+}
+
 esp_err_t setup_sta_and_promiscuous_simple()
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
     configuration_holder.wifi_interface = WIFI_IF_STA;
     configuration_holder.wifi_interface_set = true;
+    ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, configuration_holder.mac_addr));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
     return ESP_OK;
@@ -160,6 +184,110 @@ esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_
     promisc_callback_setup.general_callback = simple_callback;
     promisc_callback_setup.general_callback_is_set = true;
     return setup_sta_and_promiscuous_simple();
+}
+
+esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration)
+{
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    configuration_holder.wifi_interface = WIFI_IF_AP;
+    configuration_holder.wifi_interface_set = true;
+    wifi_config_t config = {
+        .ap = ap_configuration
+    };
+    esp_wifi_set_protocol(configuration_holder.wifi_interface, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    ESP_ERROR_CHECK(esp_wifi_set_config(configuration_holder.wifi_interface, &config));
+    ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_AP, configuration_holder.mac_addr));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    return ESP_OK;
+}
+
+esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration)
+{
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    configuration_holder.wifi_interface = WIFI_IF_STA;
+    configuration_holder.wifi_interface_set = true;
+    wifi_config_t config = {    
+        .sta = station_connection_configuration
+    };
+    esp_wifi_set_protocol(configuration_holder.wifi_interface, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    ESP_ERROR_CHECK(esp_wifi_set_config(configuration_holder.wifi_interface, &config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_connect());
+
+    esp_err_t status = ESP_ERR_WIFI_NOT_CONNECT;
+    int connection_test_counter = 0;
+    const TickType_t xDelay = 100 / portTICK_PERIOD_MS; 
+    while(status == ESP_ERR_WIFI_NOT_CONNECT && connection_test_counter < 20){
+        vTaskDelay( xDelay );
+        ESP_LOGI(LOGGING_TAG, "CONNECTING TO AP ATTEMPT %d", connection_test_counter);
+        status = esp_wifi_sta_get_ap_info(&configuration_holder.connected_ap_record);
+        connection_test_counter++;
+    }
+    if(status == ESP_OK){
+        configuration_holder.wifi_connected_to_ap = true;
+        return ESP_OK;
+    }
+    return status;
+}
+
+esp_err_t get_current_mac(uint8_t mac_output_holder[6])
+{
+    // Return mac_addr if it is configured properly
+    if(configuration_holder.mac_addr[0] != 0 && configuration_holder.mac_addr[1] != 0 && configuration_holder.mac_addr[2] != 0 && configuration_holder.mac_addr[3] != 0 && configuration_holder.mac_addr[4] != 0 && configuration_holder.mac_addr[5] != 0)
+    {
+        mac_output_holder[0] = configuration_holder.mac_addr[0];
+        mac_output_holder[1] = configuration_holder.mac_addr[1];
+        mac_output_holder[2] = configuration_holder.mac_addr[2];
+        mac_output_holder[3] = configuration_holder.mac_addr[3];
+        mac_output_holder[4] = configuration_holder.mac_addr[4];
+        mac_output_holder[5] = configuration_holder.mac_addr[5];
+
+        return ESP_OK;
+    }
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6])
+{
+    // Return mac_addr if it is configured properly
+    if(configuration_holder.connected_ap_record.bssid[0] != 0 && configuration_holder.connected_ap_record.bssid[1] != 0 && configuration_holder.connected_ap_record.bssid[2] != 0 && configuration_holder.connected_ap_record.bssid[3] != 0 && configuration_holder.connected_ap_record.bssid[4] != 0 && configuration_holder.connected_ap_record.bssid[5] != 0)
+    {
+        mac_output_holder[0] = configuration_holder.connected_ap_record.bssid[0];
+        mac_output_holder[1] = configuration_holder.connected_ap_record.bssid[1];
+        mac_output_holder[2] = configuration_holder.connected_ap_record.bssid[2];
+        mac_output_holder[3] = configuration_holder.connected_ap_record.bssid[3];
+        mac_output_holder[4] = configuration_holder.connected_ap_record.bssid[4];
+        mac_output_holder[5] = configuration_holder.connected_ap_record.bssid[5];
+
+        return ESP_OK;
+    }
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t ap_get_current_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder) // Most stations anyways is 10, very little storage so get 10 always anyways
+{
+    if(configuration_holder.wifi_interface_set == false)
+    {
+        return ESP_ERR_WIFI_NOT_INIT;
+    }
+    if(configuration_holder.wifi_interface != WIFI_IF_AP)
+    {
+        return ESP_ERR_WIFI_MODE;
+    }
+    wifi_sta_list_t sta_list_holder;
+    ESP_ERROR_CHECK(esp_wifi_ap_get_sta_list(&sta_list_holder));
+    int counter = 0;
+    for(counter = 0; counter < sta_list_holder.num; counter++)
+    {
+        station_macs_holder[counter][0] = sta_list_holder.sta[counter].mac[0];
+        station_macs_holder[counter][1] = sta_list_holder.sta[counter].mac[1];
+        station_macs_holder[counter][2] = sta_list_holder.sta[counter].mac[2];
+        station_macs_holder[counter][3] = sta_list_holder.sta[counter].mac[3];
+        station_macs_holder[counter][4] = sta_list_holder.sta[counter].mac[4];
+        station_macs_holder[counter][5] = sta_list_holder.sta[counter].mac[5];
+    }
+    *number_valid_stations_holder = sta_list_holder.num;
+    return ESP_OK;
 }
 
 // **************************************************
@@ -249,7 +377,73 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
         ESP_LOGI(LOGGING_TAG, "SEND POSTCALL END");
     }
 
-    esp_wifi_80211_tx(configuration_holder.wifi_interface, (void *)packet, length, false);
+    esp_wifi_80211_tx(configuration_holder.wifi_interface, (void *)packet, length, true);
+    return ESP_OK;
+}
+
+esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6])
+{
+    if(configuration_holder.wifi_interface_set == false)
+    {
+        return ESP_ERR_WIFI_NOT_INIT;
+    }
+    if(configuration_holder.wifi_interface != WIFI_IF_AP)
+    {
+        return ESP_ERR_WIFI_MODE;
+    }
+    wifi_mac_data_frame_t* pkt = alloc_packet_custom(
+        0x0208, // Always send as a data packet, also set To DS 0/From DS 1.
+        0xFA, // Set the duration ID
+        station_addr,
+        configuration_holder.mac_addr,
+        configuration_holder.mac_addr,
+        0x00, // This is managed by the chip and gets overwritten on simple send
+        (uint8_t []){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        payload_length,
+        payload
+    );
+    send_packet_simple(pkt, payload_length);
+    free(pkt);
+    return ESP_OK;
+}
+
+// Do a broadcast
+esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length)
+{
+    if(configuration_holder.wifi_interface_set == false)
+    {
+        return ESP_ERR_WIFI_NOT_INIT;
+    }
+    if(configuration_holder.wifi_interface != WIFI_IF_AP)
+    {
+        return ESP_ERR_WIFI_MODE;
+    }
+    return ap_send_payload_to_station(payload, payload_length, (uint8_t []){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
+} 
+
+esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length)
+{
+    if(configuration_holder.wifi_interface_set == false || configuration_holder.wifi_connected_to_ap == false)
+    {
+        return ESP_ERR_WIFI_NOT_INIT;
+    }
+    if(configuration_holder.wifi_interface != WIFI_IF_STA)
+    {
+        return ESP_ERR_WIFI_MODE;
+    }
+    wifi_mac_data_frame_t* pkt = alloc_packet_custom(
+        0x0108, // Always send as a data packet, also set To DS 1/From DS 0
+        0xFA, // Set the duration ID
+        configuration_holder.connected_ap_record.bssid,
+        configuration_holder.mac_addr,
+        configuration_holder.connected_ap_record.bssid,
+        0x00, // This is managed by the chip and gets overwritten on simple send
+        (uint8_t []){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        payload_length,
+        payload
+    );
+    send_packet_simple(pkt, payload_length);
+    free(pkt);
     return ESP_OK;
 }
 
