@@ -9,11 +9,11 @@
 #include <nvs_flash.h>
 #include "packet_library.h"
 
-#define MIDDLE_MONITOR false
+#define MIDDLE_MONITOR true
 
 int counter = 0;
 uint8_t mac[6];
-uint8_t middle_monitor_mac[6] = { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55 };
+uint8_t middle_monitor_mac[6] = { 0x78, 0x21, 0x84, 0xB9, 0x36, 0x20 };
 uint8_t pkt_payload[6] = { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55 };
 int station_pkt_payload_length = 6;
 wifi_mac_data_frame_t* station_pkt;
@@ -22,8 +22,8 @@ wifi_mac_data_frame_t* station_pkt;
 static void receive_middle_man_general_callback(wifi_mac_data_frame_t* packet, int payload_length)
 {
     ESP_LOGI(LOGGING_TAG, "Packet Received");
-    if(packet->address_2[0] == mac[0] && packet->address_2[1] == mac[1] && packet->address_2[2] == mac[2] 
-    && packet->address_2[3] == mac[3] && packet->address_2[4] == mac[4] && packet->address_2[5] == mac[5])
+    if(packet->address_1[0] == mac[0] && packet->address_1[1] == mac[1] && packet->address_1[2] == mac[2] 
+    && packet->address_1[3] == mac[3] && packet->address_1[4] == mac[4] && packet->address_1[5] == mac[5])
     {
         ESP_LOGI(LOGGING_TAG, "Packet To Forward Received");
         wifi_mac_data_frame_t* pkt = alloc_packet_custom(
@@ -31,14 +31,12 @@ static void receive_middle_man_general_callback(wifi_mac_data_frame_t* packet, i
             0xFA, 
             (uint8_t []){ 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC },
             mac,
-            packet->address_3,
+            packet->address_2,
             0xFA,
             (uint8_t []){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
             payload_length,
             packet->payload
         );
-        ESP_LOGI(LOGGING_TAG, "Packet To Send");
-        // Log packets from the middle_monitor_mac and not from us
         log_packet_annotated(pkt, payload_length, LOGGING_TAG);
         send_packet_simple(pkt, payload_length);
         ESP_LOGI(LOGGING_TAG, "Packet Sent");
@@ -49,22 +47,24 @@ static void receive_middle_man_general_callback(wifi_mac_data_frame_t* packet, i
 // Create the callback we want to use when we get a packet
 static void receive_station_general_callback(wifi_mac_data_frame_t* packet, int payload_length)
 {
-    ESP_LOGI(LOGGING_TAG, "Packet Received");
-
+    ESP_LOGI(LOGGING_TAG, "Packet Received %d", counter);
     counter++;
-    if(counter % 16 == 0)
+    if(counter % 32 == 0)
     {
         ESP_LOGI(LOGGING_TAG, "SENDING PACKET");
         send_packet_simple(station_pkt, station_pkt_payload_length);
+        counter = 0;
         ESP_LOGI(LOGGING_TAG, "PACKET SENT");
     }
 
     if(packet->address_2[0] == middle_monitor_mac[0] && packet->address_2[1] == middle_monitor_mac[1] && packet->address_2[2] == middle_monitor_mac[2] 
-    && packet->address_2[3] == middle_monitor_mac[3] && packet->address_2[4] == middle_monitor_mac[4] && packet->address_2[5] == middle_monitor_mac[5]
-    && packet->address_3[0] != mac[0] && packet->address_3[1] != mac[1] && packet->address_3[2] != mac[2] 
-    && packet->address_3[3] != mac[3] && packet->address_3[4] != mac[4] && packet->address_3[5] != mac[5])
+    && packet->address_2[3] == middle_monitor_mac[3] && packet->address_2[4] == middle_monitor_mac[4] && packet->address_2[5] == middle_monitor_mac[5])
     {
+        // Option to not capture packets from us from middle-monitor
+        // && packet->address_3[0] != mac[0] && packet->address_3[1] != mac[1] && packet->address_3[2] != mac[2] 
+        // && packet->address_3[3] != mac[3] && packet->address_3[4] != mac[4] && packet->address_3[5] != mac[5]
         // Log packets from the middle_monitor_mac and not from us
+        ESP_LOGI(LOGGING_TAG, "PACKET RECEIVED FROM MIDDLE_MONITOR");
         log_packet_annotated(packet, payload_length, LOGGING_TAG);
     }
 }
@@ -72,8 +72,8 @@ static void receive_station_general_callback(wifi_mac_data_frame_t* packet, int 
 /* Advanced Communication method */
 static void advanced_interdevice_communication(void)
 {
-    setup_wifi_station_simple();
-    setup_sta_default();
+    ESP_ERROR_CHECK(setup_wifi_station_simple());
+    ESP_ERROR_CHECK(setup_sta_default());
     ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
     ESP_LOGI(LOGGING_TAG, "MAC %02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1], mac[2], mac[3], mac[4], mac[5]);
 
@@ -85,8 +85,7 @@ static void advanced_interdevice_communication(void)
     if(MIDDLE_MONITOR) 
     {
         // Setup sta and promisc capabilities
-        ESP_ERROR_CHECK(set_receive_callback_general(&receive_middle_man_general_callback));
-        ESP_ERROR_CHECK(setup_sta_and_promiscuous_simple());
+        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&receive_middle_man_general_callback));
     }
     else
     {
@@ -103,11 +102,7 @@ static void advanced_interdevice_communication(void)
         );
 
         // Setup sta and promisc capabilities
-
-        ESP_ERROR_CHECK(setup_promiscuous_simple()); // Option to turn on promiscuous listener
-        ESP_ERROR_CHECK(setup_wifi_station_simple());
-        // ESP_ERROR_CHECK(set_receive_callback_general(&receive_station_general_callback));
-        // ESP_ERROR_CHECK(setup_sta_and_promiscuous_simple());
+        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&receive_station_general_callback)); // Option to turn on promiscuous listener
     }
 }
 

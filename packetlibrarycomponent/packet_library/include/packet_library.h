@@ -76,8 +76,8 @@ esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
 esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback);
 esp_err_t remove_promiscuous_general_callback();
 esp_err_t set_promiscuous_enabled(bool enable);
-esp_err_t setup_sta_and_promiscuous_simple();
-esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback);
+esp_err_t setup_sta_and_promiscuous_simple(); // Probably replacable with station then promisc setup
+esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback); // Probably replacable with station then promisc setup
 esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration);
 esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration);
 esp_err_t get_current_mac(uint8_t mac_output_holder[6]);
