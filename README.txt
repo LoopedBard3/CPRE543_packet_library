@@ -1,0 +1,76 @@
+ESP-32 Packet Component by Parker Bibus
+Note: This readme is best read with wordwrap enabled :)
+
+Table of Contents:
+Background
+Description
+Prerequisites
+Using The Component
+Running the Examples
+Credits
+
+Background
+This repository was completed as part of my semester project for CPRE 543 at Iowa State University. The goal of this project was to create a Wi-Fi library/component for the ESP32 micro-controller, similar to the default ESP32 WiFi library, and expand on it with dedicated functionality for packet based testing, such that it may be used to test routers against unexpected packet formats. Working toward these goals allowed for me to learn about WiFi protocols and packets in code and provide a component for packet based testing. For the purposes of the rest of this repo, packet library means the same as component. The main difference being that the name component is provided by the ESP-IDF ecosystem and has similar functionality to library's, but has specific things it needs to include.
+
+
+Description
+This repo includes the component project, found by the name of packetlibrarycomponent, and four example projects: LocalNetworkCapture, BasicCallbackUsage, AdvancedInterdeviceCommunication, and WPA-PSKConnection. The component provides generalized access to the underlying ESP-IDF functionality while managing some state information. This includes functionality around setting up the ESP-32's WiFi capabilities, adding and managing callback functionality for packets being sent or received, generating packets to send, and more. This functionality is partially demonstrated through each of the example programs, with their respective descriptions available below.
+
+
+Prerequisites
+To use this repository, you will need the following:
+    At least one ESP-32 micro-controller (2 for WAP-PSKConnection example, 3 for AdvancedInterdeviceCommunication)
+    Cables to connect to and flash the ESP-32 devices
+    ESP-IDF installed (Visual Studio Code install guide(What I used): https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/vscode-setup.html)
+    This repository
+
+
+Using The Component
+There are two primary ways to use the library as a component in your own ESP-IDF project: as a black box dependency or included in source. If the goal is to run the component as a black box, then the official way to manage the dependency is with the IDF Component Manager. Documentation for this scenario is available here: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html, but this is not how the component is included in the examples, so this will not be expanded upon in this README.
+To start using the component in the source code of your own project, begin by cloning this repository so you have the source code. Next, if you don't already have a project, create an ESP-IDF project that will use the component. With the project created, copy the packetlibrarycomponent folder (or the whole repo) such that the packetlibrarycomponent folder is in the same folder as the projects folder. The final step is to add the necessary references to the component in the project so the component is included. This consists of three additions, the first change being the addition of 'set(EXTRA_COMPONENT_DIRS "../packetlibrarycomponent")' to your projects top level CMakeLists.txt under the 'cmake_minimum_required(VERSION 3.16)' line (~line 6). The second project change is to the inner CMakeList.txt file, with the addition of 'packet_library' to the REQUIRES list, or the addition of 'REQUIRES packet_library' after the 'INCLUDE_DIRS' line inside the idf_component_register. Finally, the component header, '#include "packet_library.h"', needs to be included in your project where you want to use the component.
+Notes on using the component:
+    ESP-32 logging is done using the ESP_LOGI macro https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/error-handling.html. This macro takes in a tag to determince the logging subsystem. There is a component provided tag available by using 'LOGGING_TAG' in the tag spot which denotes the logs as coming from 'packet_library'. This also influenced the choice to use the built in error codes for method return values (esp_err_t). 
+
+
+Running the Examples (when using the Visual Studio Code (VSCode) extension)
+To start, use VSCode to open the example's folder. This will open the folder in the explorer such that only the example source code will be available. Next, check the example source under the main folder to see if there are any '#define's for settting up the specific functionality of the example. Once you have the example code ready to build, connect your ESP-32 device(s) and select the one you want to upload the specific code to using the 'ESP-IDF: Select port to use (COM, tty, usbserial)' VSCode command ('Show All Commands' is available by pressing F1 or Ctrl+Shift+P by default, https://code.visualstudio.com/docs/getstarted/keybindings#_navigation). With the ESP-32 device you want to flash the specific setup to selected, simply run the 'ESP-IDF: Build, Flash, and start a monitor on your device' command and flash the ESP-32, or run each command separately: 'ESP-IDF: Build your project', 'ESP-IDF: Flash (UART) your project', and 'ESP-IDF: Monitor your device' (specific flash instructions vary from device to device, consult your own devices guide for general flashing steps). At this point the example will be running on your ESP-32 device with logging messages being sent to your connected PC. If the example you are running requires more than one ESP-32, connect the next one to the computer, update the examples '#define' configuration, select the correct COM port, and Build-Flash-Monitor to the next ESP-32. If you do not have enough connections to have all of your ESP-32s connected at the same time, you can flash the first, unplug it, and plug it in someplace else, although you will not have the capability to monitor the device.
+
+
+The Example Projects
+This section provides a description of what functionality each example program demonstrates and specific setup steps and requirements. General code explanation may be touched on, but is available further in depth in the source comments.
+
+    LocalNetworkCapture (1 ESP-32 Needed)
+The LocalNetworkCapture example demonstrates how to setup a simple a simple WiFi sniffer using the component. This includes easy device setup and how to use callbacks (specifically the promiscuous/packet received callback). The monitoring output of this example program will contain a log of each of the packets received in the format specified in the log_captured_packet method. There are no special steps for running this example project, just Build-Flash-Monitor your connected ESP-32 and you should see captured packets being logged.
+
+    BasicCallbackUsage (1 ESP-32 Needed, 2 preferred)
+The BasicCallbackUsage example demonstrates how to create and use both the whole packet and packet field specific callbacks for sending and receiving packets (Note when looking at the received packets, the payload includes the frame check sequence in its output). The code starts with the setup definitions:
+SENDER: Whether the ESP-32 should send packets.
+RECEIVER: Whether the ESP-32 should receive packets, this holds the opposite bool value as SENDER and is defined to make the specific sections more clear in the main code.
+DO_GENERAL_CALLBACK: Whether to enable the general_callback functionality.
+DO_INDIVIDUAL_CALLBACK: Whether to enable the individual_callback functionality.
+
+The next section continues with the callbacks themselves, starting with the double_general_callback that has access to the whole packet and doubles the duration ID of packets that get called through it. Next, are individual field callbacks. The callbacks beginning with double, double the value of the individual field noted in the name, the set_duration_id_callback alternates the duration_id value, and the payload callback sets the third payload value to 255 (0xFF). Then comes the primary method run which contains a simple setup and code for if the ESP32 is acting as a receiver or sender. Code for each of these sections has comments providing context and insight into what is occuring.
+Moving on to what to output to expect, in both SENDER options, packets will be logged with a print before running the callback, the callbacks printing the changes they made, and then a post callback print with the final packet values. Specific differences between when the ESP-32 is in sending vs receiving mode include only logging the packet being sent when sending and only logging Data type packets when receiving, and the duration_id doubling when receiving and being set when sending the packet. 
+If you have 2 ESP-32's available, setting one ESP-32 to SENDER true, and one to SENDER false will allow you to see the sent packets in the receiving ESP-32's captures. So while you can see the changes with only 1 ESP-32, having 2 allows for the demonstration that the sent packets are being correctly changed.
+
+    AdvancedInterdeviceCommunication (3 ESP-32 Needed)
+The AdvancedInterdeviceCommunication example demonstrates how the callbacks can be used to send packets and act on specific field values when a packet is received. In this case, the example sets one ESP-32 to act as a middle-man between two other stations, as if the middle-man was acting as a repeater where the two stations are out of range of each other. 
+To setup this example, first figure out the MAC address of the three ESP-32's you will be using. This can be done by beginning a monitor session with the ESP-32 and looking for the line 'wifi:mode : sta (MAC_ADDRESS_HERE)'. With the three MAC addresses, choose one to act as the middle-man ESP-32 and set the variable 'middle_monitor_mac' to it's MAC address. Then set the two 'station_target_macs' values to the MACs of the station ESP-32s. If desired, update the pkt_payload being sent between the two devices and its size (station_pkt_payload_length), by default this is set to an easily recognizable increment from 0x50 to 0x55 (Note when looking at the received packets, the payload includes the frame check sequence in its output). At this point, each ESP-32 can be flashed with the built example, starting with the middle-man ESP-32 and having MIDDLE_MONITOR set to true for the middle-man ESP-32 and false for the two stations. With the stations on and now receiving and sending packets, they will attempt to send packets to the middle-man ESP-32, which will make the necessary changes to the packet fields, and forward it to the other station. By default, the stations attempt to send a packet once for every 32 packets received from any source, but will only print the whole log of packets received from the other station. 
+
+    WPA-PSKConnection (2 ESP-32 Needed)
+The WPA-PSKConnection example demonstrates how to use the wifi_ap_config_t and wifi_sta_config_t types to connect one ESP-32 acting as a station to an ESP-32 acting as an access point using WPA2_PSK authentication. In addition to the WPA-PSKConnection being made, the two ESP-32's will also send packets to each other using configured connection specific methods to show that the packet receive and send functionality still works. 
+To setup this example, there are 5 fields that need to be set. These include:
+    ISAP: Bool value for whether this ESP-32 should act as the access point or station.
+    SSID: Service Set Identifier for the access point to broadcast as and the station to connect to.
+    SSIDPASSWORD: The pre-shared key (password) for the ESP-32's to use.
+    APSENDBROADCAST: Bool value for whether the access point should send broadcast packets occassionally. (This is useful for demonstrating connectivity through logs produced)
+    APSENDINDIVIDUAL: Bool value for whether the access point should send packets to each connected station. (This is useful for demonstrating connectivity through logs produced)
+The primary value that needs to be setup is the 'ISAP' value as one ESP-32 will have to run as the access point ('ISAP' = true), and one as the station ('ISAP' = false). If desired, the packet sending from the AP can be toggled for broadcast and individual packets using the 'APSENDBROADCAST' and 'APSENDINDIVIDUAL' definitions respectively. With one ESP-32 designated as the access point, and one or more as the station, the example can be run. (Important Note) Although the access point ESP-32 has to be turned on and flashed before the stations in order for the stations to make a connection.
+Going through the source, after the configuration definitions and the helper variables is the acccess point (ap) general packet received callback. This callback first ensures that we have the mac of the device stored in the mac holder in order for us to check if packets are to the access point. Then, if a packet is for us, we log the packet annotated. After the ap_general_callback is the stations general packet received callback, which starts with the same setting of the local mac value. This is followed with logging packets that are either directed to the ESP-32 or broadcast from the AP with the messages before the annotated packet log specifying which it is.
+Finally comes the bulk of the newly demonstrated functionality in the primary method called, 'wpa_psk_connection'. In this method there is a path for whether 'ISAP' is true or false. If the ESP-32 is to act as the AP (ISAP = true), then we start by generating the configuration (wifi_ap_config_t) to use for the AP. Then the general WiFi access point setup and promiscuous setup are completed with the actual configuration of the AP following ('setup_wpa_ap'). With the AP setup, we add a filter so the ESP-32 only calls back packets of the type Data. Finally, the AP starts a loop on a delay that will repeatedly send the individual and broadcast packets out, depending on which is enabled. For the station portion of this primary method, the same high level setup, packet filter, and loop send packets is followed, but instead the ESP-32 is setup as a station and configured using the 'wifi_sta_config_t' type instead of the AP type. 
+
+
+
+Credits
+The bulk of the API information for this project was found in the ESPRESSIF ESP-IDF programming guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/index.html, with the most used section of the guide being the networking APIs section on Wi-Fi https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/network/esp_wifi.html. The other main section of the API guide to note was the station and access point configuration section found https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/wifi.html#station-basic-configuration, which was especially useful for the WPA-PSK example.
+Outside the API documentation, the ESP-32 examples provided by ESPRESSIF here: https://github.com/espressif/esp-idf/tree/master/examples, were used as inspiration for how to layout the c programs and were extremely useful for becoming familiar with the project systems (i.e. build, component management, etc.).

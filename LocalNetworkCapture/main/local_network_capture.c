@@ -1,5 +1,5 @@
-/* Local Network Scan Example
-    This demonstrates    
+/* Local Network Capture Example
+    This example demonstrates how to setup a simple a simple WiFi sniffer using the component. 
 */
 
 #include <string.h>
@@ -13,6 +13,7 @@
 // Callback helper method that prints out the packets we capture with annotations (this is the inner-code from log_packet_annotated)
 esp_err_t log_captured_packet(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG)
 {
+    // Log the static packet fields, leaving only the payload to be dynamically generated
     ESP_LOGI(TAG, "Frame Control: %04X\nDuration_ID: %04X\nPacket Addr1: %02X:%02X:%02X:%02X:%02X:%02X\nAddr2: %02X:%02X:%02X:%02X:%02X:%02X\nAddr3 %02X:%02X:%02X:%02X:%02X:%02X\nSequence Control: %04X\nAddr4 %02X:%02X:%02X:%02X:%02X:%02X",
         packet->frame_control, packet->duration_id,
         packet->address_1[0], packet->address_1[1], packet->address_1[2], packet->address_1[3], packet->address_1[4], packet->address_1[5],
@@ -22,6 +23,7 @@ esp_err_t log_captured_packet(wifi_mac_data_frame_t* packet, int payload_length,
         packet->address_4[0], packet->address_4[1], packet->address_4[2], packet->address_4[3], packet->address_4[4], packet->address_4[5]
     );
 
+    // If the packet we are logging has a payload, generate the payload output string by dynamically generating the hex values. 
     if(payload_length){
         uint8_t* payload_buffer = (uint8_t*)malloc(payload_length*2); // Times 2 for 2 hex per byte
         char temp_buffer[3];

@@ -71,10 +71,10 @@ esp_err_t setup_wifi_access_point_simple();
 esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station); 
 esp_err_t setup_sta_default();
 esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter);
-esp_err_t setup_promiscuous_default(wifi_promiscuous_cb_t callback);
+esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback);
 esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
 esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback);
-esp_err_t remove_promiscuous_general_callback();
+esp_err_t disable_promiscuous_general_callback();
 esp_err_t set_promiscuous_enabled(bool enable);
 esp_err_t setup_sta_and_promiscuous_simple(); // Probably replacable with station then promisc setup
 esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback); // Probably replacable with station then promisc setup
@@ -90,8 +90,9 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
 esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]);
 esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length); // Do a broadcast
 esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length);
+esp_err_t sta_send_payload_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]);
 
-// Individual field callbacks/send options
+// Individual field receive/send callback
 esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback);
 esp_err_t set_receive_callback_frame_control(packet_library_frame_control_callback_t simple_callback);
 esp_err_t set_receive_callback_duration_id(packet_library_duration_id_callback_t simple_callback);

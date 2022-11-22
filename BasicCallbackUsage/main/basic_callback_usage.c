@@ -1,6 +1,6 @@
 /* Basic Callback Example
-
-
+    This example demonstrates how to create and use both the whole packet and packet 
+    field specific callbacks for sending and receiving packets.
 */
 
 #include <string.h>
@@ -56,7 +56,7 @@ static void payload_callback(uint8_t payload[], int payload_length)
 {
     if(payload_length > 3)
     {
-        payload[3] = 255;
+        payload[2] = 255;
     }
     ESP_LOGI(LOGGING_TAG, "Individual Callback, Payload Length: %d", payload_length);
 }
