@@ -106,12 +106,12 @@ static void wpa_psk_connection(void)
             // If individual packet sending is enabled, send them
             if(APSENDINDIVIDUAL)
             {
-                ESP_ERROR_CHECK(ap_get_current_connected_sta_macs(sta_macs_holder, &connected_stas_count)); // Get the list of the currently connected stations MAC addresses
+                ESP_ERROR_CHECK(get_current_ap_connected_sta_macs(sta_macs_holder, &connected_stas_count)); // Get the list of the currently connected stations MAC addresses
                 int counter = 0;
                 for(counter = 0; counter < connected_stas_count; counter++)
                 {
                     // For each connected station, send it a payload
-                    ESP_ERROR_CHECK(ap_send_payload_to_station(payload, payload_length, sta_macs_holder[counter]));
+                    ESP_ERROR_CHECK(send_payload_ap_to_station(payload, payload_length, sta_macs_holder[counter]));
                     packet_sent = true;
                 }
             }
@@ -119,7 +119,7 @@ static void wpa_psk_connection(void)
             if(APSENDBROADCAST && connected_stas_count > 0)
             {
                 packet_sent = true;
-                ESP_ERROR_CHECK(ap_send_payload_to_all_stations(payload, payload_length)); // This sends the payload as a broadcast packet (target address 0xFF:FF:FF:FF:FF:FF)
+                ESP_ERROR_CHECK(send_payload_ap_to_all_stations(payload, payload_length)); // This sends the payload as a broadcast packet (target address 0xFF:FF:FF:FF:FF:FF)
             }
             // If a packet is sent, log that we sent something
             if(packet_sent)
@@ -161,7 +161,7 @@ static void wpa_psk_connection(void)
         const TickType_t xDelay = 4000 / portTICK_PERIOD_MS; 
         while(true){
             // Actually send the packet
-            ESP_ERROR_CHECK(sta_send_payload_to_access_point(payload, payload_length));
+            ESP_ERROR_CHECK(send_payload_sta_to_access_point(payload, payload_length));
             ESP_LOGI(LOGGING_TAG, "STATION PACKET SENT");
             // Wait 4000ms
             vTaskDelay( xDelay );

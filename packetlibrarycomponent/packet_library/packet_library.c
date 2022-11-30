@@ -344,7 +344,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
 }
 
 // This is an AP helper method to send a packet to a specific station, based on the target stations MAC address, with the component manages everything but the payload and finding the target stations MAC addr
-esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6])
+esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6])
 {
     if(configuration_holder.wifi_interface_set == false)
     {
@@ -371,7 +371,7 @@ esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint
 }
 
 // This is an AP helper method to broadcast a packet, with the component manages everything but the payload
-esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length)
+esp_err_t send_payload_ap_to_all_stations(uint8_t payload[], int payload_length)
 {
     if(configuration_holder.wifi_interface_set == false)
     {
@@ -381,11 +381,11 @@ esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length)
     {
         return ESP_ERR_WIFI_MODE;
     }
-    return ap_send_payload_to_station(payload, payload_length, (uint8_t []){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
+    return send_payload_ap_to_station(payload, payload_length, (uint8_t []){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
 } 
 
 // This is a station helper method for when connected to an AP for sending a payload to the AP, with the component managing the MAC address fiels and packet allocation.
-esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length)
+esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length)
 {
     if(configuration_holder.wifi_interface_set == false || configuration_holder.wifi_connected_to_ap == false)
     {
@@ -412,7 +412,7 @@ esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length
 }
 
 // This is a station helper method for sending a packet to a target MAC through the connected access point, with the component managing the AP and this ESP-32 address fields, and packet allocation.
-esp_err_t sta_send_payload_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6])
+esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6])
 {
     if(configuration_holder.wifi_interface_set == false || configuration_holder.wifi_connected_to_ap == false)
     {
@@ -835,7 +835,7 @@ esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6])
 
 // Helper method to get the MAC addresses of the connected stations when acting as an access point
 // The connected MACs are stored in 'station_macs_holder' and the number of stations is stored in 'number_valid_stations_holder'
-esp_err_t ap_get_current_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder) // Most stations anyways is 10, very little storage so get 10 always anyways
+esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder) // Most stations anyways is 10, very little storage so get 10 always anyways
 {
     if(configuration_holder.wifi_interface_set == false)
     {

@@ -82,15 +82,15 @@ esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration);
 esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration);
 esp_err_t get_current_mac(uint8_t mac_output_holder[6]);
 esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6]);
-esp_err_t ap_get_current_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder);
+esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder);
 
 // Send full control
 esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
 esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
-esp_err_t ap_send_payload_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]);
-esp_err_t ap_send_payload_to_all_stations(uint8_t payload[], int payload_length); // Do a broadcast
-esp_err_t sta_send_payload_to_access_point(uint8_t payload[], int payload_length);
-esp_err_t sta_send_payload_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]);
+esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]);
+esp_err_t send_payload_ap_to_all_stations(uint8_t payload[], int payload_length); // Do a broadcast
+esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length);
+esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]);
 
 // Individual field receive/send callback
 esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback);
