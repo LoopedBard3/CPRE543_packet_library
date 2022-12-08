@@ -65,34 +65,31 @@ typedef struct {
     enum callback_print_option postcallback_print;
 } callback_setup_t;
 
-// Setup/configuration methods
-esp_err_t setup_wifi_station_simple();
-esp_err_t setup_wifi_access_point_simple();
-esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station); 
-esp_err_t setup_sta_default();
-esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter);
-esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback);
-esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks
-esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback);
-esp_err_t disable_promiscuous_general_callback();
-esp_err_t set_promiscuous_enabled(bool enable);
-esp_err_t setup_sta_and_promiscuous_simple(); // Probably replacable with station then promisc setup
-esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback); // Probably replacable with station then promisc setup
-esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration);
-esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration);
-esp_err_t get_current_mac(uint8_t mac_output_holder[6]);
-esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6]);
-esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder);
+// Setup/Configuration Functions
+esp_err_t setup_wifi_station_simple(); // LOC: 11
+esp_err_t setup_wifi_access_point_simple(); // LOC: 11
+esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station);  // LOC: 10
+esp_err_t setup_sta_default(); // LOC: 2
+esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter); // LOC: 1
+esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback); // LOC: 2
+esp_err_t setup_promiscuous_simple(); // Enables individual section callbacks // LOC: 2
+esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback); // LOC: 2
+esp_err_t disable_promiscuous_general_callback(); // LOC: 0
+esp_err_t set_promiscuous_enabled(bool enable); // LOC: 0
+esp_err_t setup_sta_and_promiscuous_simple(); // Probably replacable with station then promisc setup // LOC: 5
+esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback); // Probably replacable with station then promisc setup // LOC: 5
+esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration); // LOC: 6
+esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration); // LOC: 15
 
-// Send full control
-esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation
-esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length);
-esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]);
-esp_err_t send_payload_ap_to_all_stations(uint8_t payload[], int payload_length); // Do a broadcast
-esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length);
-esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]);
+// Send Full Control
+esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq); // Note, doesn't do any callback manipulation // LOC: 1
+esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length); // LOC: 12
+esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]); // LOC: 27
+esp_err_t send_payload_ap_broadcast(uint8_t payload[], int payload_length); // Do a broadcast // LOC: 28
+esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length); // LOC: 27
+esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]); // LOC: 27
 
-// Individual field receive/send callback
+// Individual Field Receive/Send Callback
 esp_err_t set_receive_callback_general(packet_library_simple_callback_t simple_callback);
 esp_err_t set_receive_callback_frame_control(packet_library_frame_control_callback_t simple_callback);
 esp_err_t set_receive_callback_duration_id(packet_library_duration_id_callback_t simple_callback);
@@ -124,7 +121,7 @@ esp_err_t set_send_callback_address_2(packet_library_address_2_callback_t simple
 esp_err_t set_send_callback_address_3(packet_library_address_3_callback_t simple_callback);
 esp_err_t set_send_callback_address_4(packet_library_address_4_callback_t simple_callback);
 esp_err_t set_send_callback_sequence_control(packet_library_sequence_control_callback_t simple_callback);
-esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_callback); // TODO: Add payload callback that also passes payload length?
+esp_err_t set_send_callback_payload(packet_library_payload_callback_t simple_callback);
 esp_err_t set_send_pre_callback_print(enum callback_print_option option);
 esp_err_t set_send_post_callback_print(enum callback_print_option option);
 
@@ -138,11 +135,14 @@ esp_err_t remove_send_callback_address_4();
 esp_err_t remove_send_callback_sequence_control();
 esp_err_t remove_send_callback_payload();
 
-// General Helper Methods
-esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
+// General Helper Functions
+esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG); // LOC: 15
 esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG);
-wifi_mac_data_frame_t* alloc_packet_custom(uint16_t frame_control, uint16_t duration_id, uint8_t address_1[6], uint8_t address_2[6], uint8_t address_3[6], uint16_t sequence_control, uint8_t address_4[6], int payload_length, uint8_t* payload);
+wifi_mac_data_frame_t* alloc_packet_custom(uint16_t frame_control, uint16_t duration_id, uint8_t address_1[6], uint8_t address_2[6], uint8_t address_3[6], uint16_t sequence_control, uint8_t address_4[6], int payload_length, uint8_t* payload); // LOC: 10
 wifi_mac_data_frame_t* alloc_packet_default_payload(int payload_length, uint8_t *payload);
 wifi_mac_data_frame_t* alloc_packet_default(int payload_length);
+esp_err_t get_current_mac(uint8_t mac_output_holder[6]);  
+esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6]);  
+esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder); // LOC: 15
 
 #endif

@@ -15,6 +15,7 @@
 #define RECEIVER !SENDER // Sets if the device is the receiver to the opposite of sender
 #define DO_GENERAL_CALLBACK true // Enables General Callback Example
 #define DO_INDIVIDUAL_CALLBACK true // Enables Individual Field Callback Examples
+#define DO_PRE_POST_CALLBACK_LOGGING true // Enables the pre and post callback logging functionality
 
 // Simple general packet callback that has access to the whole packet, doubles duration id in this case. (Used when sending and receiving)
 static void double_general_callback(wifi_mac_data_frame_t* packet)
@@ -69,10 +70,12 @@ static void basic_callbacks(void)
 
     if(RECEIVER)
     {
-        // Enable the printing of received packets with annotations before and after all callbacks are run.
-        ESP_ERROR_CHECK(set_receive_pre_callback_print(ANNOTATED));
-        ESP_ERROR_CHECK(set_receive_post_callback_print(ANNOTATED));
-        
+        if(DO_PRE_POST_CALLBACK_LOGGING){
+            // Enable the printing of received packets with annotations before and after all callbacks are run.
+            ESP_ERROR_CHECK(set_receive_pre_callback_print(ANNOTATED));
+            ESP_ERROR_CHECK(set_receive_post_callback_print(ANNOTATED));
+        }
+
         // Setup a packet filter so that the only packets we run callbacks on are data packets
         wifi_promiscuous_filter_t packet_filter = {
             .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA
@@ -103,10 +106,12 @@ static void basic_callbacks(void)
         // Setup the device as a station so it can send packets
         setup_sta_default();
 
-        // Enable the printing of received packets with annotations before and after all callbacks are run.
-        ESP_ERROR_CHECK(set_send_pre_callback_print(ANNOTATED));
-        ESP_ERROR_CHECK(set_send_post_callback_print(ANNOTATED));
-
+        if(DO_PRE_POST_CALLBACK_LOGGING){
+            // Enable the printing of received packets with annotations before and after all callbacks are run.
+            ESP_ERROR_CHECK(set_send_pre_callback_print(ANNOTATED));
+            ESP_ERROR_CHECK(set_send_post_callback_print(ANNOTATED));
+        }
+        
         // Create a payload to include in out custom send packet
         uint8_t payload[6] = { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55 };
         int payload_length = 6;

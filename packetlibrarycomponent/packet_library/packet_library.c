@@ -85,24 +85,24 @@ static void promisc_simple_callback(void *buf, wifi_promiscuous_pkt_type_t type)
 }
 
 // **************************************************
-// Setup/configuration methods
+// Setup/Configuration Functions
 // **************************************************
 // This initializes the ESP-32 WiFi systems to setup as a station, using the default Wifi Config provided by ESP-IDF
-esp_err_t setup_wifi_station_simple()
+esp_err_t setup_wifi_station_simple() // LOC (Lines of Code saved): 1 + 10 = 11
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     return setup_wifi_custom(cfg, true);
 }
 
 // This initializes the ESP-32 WiFi systems to setup as an access point, using the default Wifi Config provided by ESP-IDF
-esp_err_t setup_wifi_access_point_simple()
+esp_err_t setup_wifi_access_point_simple() // LOC: 1 + 10 = 11
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     return setup_wifi_custom(cfg, false);
 }
 
 // This initializes the WiFi system using a custom user supplied config and whether the ESP-32 is going to act as a station or access point
-esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station)
+esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station) // LOC: 10
 {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -122,9 +122,8 @@ esp_err_t setup_wifi_custom(wifi_init_config_t config, bool as_station)
     return ESP_OK;
 }
 
-// TODO: Figure out minimum promis + sta setup necessary
 // This sets the ESP-32 WiFi mode to Station and enables the WiFi system. 
-esp_err_t setup_sta_default()
+esp_err_t setup_sta_default() // LOC: 2
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -134,15 +133,14 @@ esp_err_t setup_sta_default()
 }
 
 // This acts as a wrapper around the build in packet received filter in order to keep consistent naming thorughout more of the component.
-esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter)
+esp_err_t setup_packets_type_filter(const wifi_promiscuous_filter_t *type_filter) // LOC: 1
 { 
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(type_filter));
     return ESP_OK;
 }
 
-// TODO: Figure out minimum promis + sta setup necessary
 // This sets up the packet reception capabilities (promiscuous enabled) and allows the user to set their own callback to run outside the component managed system.
-esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback)
+esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback) // LOC: 2
 {
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(callback));
     ESP_LOGI(LOGGING_TAG, "DEFAULT PROMISCUOUS CALLBACK SET");
@@ -151,9 +149,8 @@ esp_err_t setup_promiscuous_custom(wifi_promiscuous_cb_t callback)
     return ESP_OK;
 }
 
-// TODO: Figure out minimum promis + sta setup necessary
 // This enables the the packet reception capabilities (promiscuous mode) along with setting the callback to be the component managed callback near the top of this source.
-esp_err_t setup_promiscuous_simple()
+esp_err_t setup_promiscuous_simple() // LOC: 2
 {
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
     ESP_LOGI(LOGGING_TAG, "SIMPLE PROMISCUOUS CALLBACK SET");
@@ -163,7 +160,7 @@ esp_err_t setup_promiscuous_simple()
 }
 
 // This enables the packet reception capabilities similar to 'setup_promiscuous_simple', but also sets a general callback up for use in the components managed callback system. 
-esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback)
+esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_callback_t simple_callback) // LOC: 0 + 2 = 2
 {
     promisc_callback_setup.general_callback = simple_callback;
     promisc_callback_setup.general_callback_is_set = true;
@@ -171,20 +168,20 @@ esp_err_t setup_promiscuous_simple_with_general_callback(packet_library_simple_c
 }
 
 // This disables the general callback
-esp_err_t disable_promiscuous_general_callback()
+esp_err_t disable_promiscuous_general_callback() // LOC: 0
 {
     promisc_callback_setup.general_callback_is_set = false;
     return ESP_OK;
 }
 
 // This allows for the manual toggling of the promiscuous packet reception, and therefore the packet received callback running
-esp_err_t set_promiscuous_enabled(bool enable)
+esp_err_t set_promiscuous_enabled(bool enable) // LOC: 0
 {
     return esp_wifi_set_promiscuous(enable);
 }
 
 // This sets the ESP-32 up for use to both send and receive packets using the system managed received packet system, along with getting and storing the devices mac_address for other methods
-esp_err_t setup_sta_and_promiscuous_simple()
+esp_err_t setup_sta_and_promiscuous_simple() // LOC: 5
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&promisc_simple_callback));
@@ -197,7 +194,7 @@ esp_err_t setup_sta_and_promiscuous_simple()
 }
 
 // This sets the general promiscuous callback up and then sets up the ESP-32 for station+promiscuous use via 'setup_sta_and_promiscuous_simple'.
-esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback)
+esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_library_simple_callback_t simple_callback) // LOC: 0 + 5
 {
     promisc_callback_setup.general_callback = simple_callback;
     promisc_callback_setup.general_callback_is_set = true;
@@ -205,7 +202,7 @@ esp_err_t setup_sta_and_promiscuous_simple_with_promisc_general_callback(packet_
 }
 
 // This sets up the ESP-32 device so that it acts as an access point based on the passed in configuration
-esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration) // TODO rename this method (find something else for _wpa_)
+esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration) // LOC: 6
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     configuration_holder.wifi_interface = WIFI_IF_AP;
@@ -221,7 +218,7 @@ esp_err_t setup_wpa_ap(wifi_ap_config_t ap_configuration) // TODO rename this me
 }
 
 // This sets up the ESP-32 device so that it acts as a station and connect to the access point based on the passed in configuration
-esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration) // TODO rename this method (find something else for _wpa_)
+esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration) // LOC: 15
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     configuration_holder.wifi_interface = WIFI_IF_STA;
@@ -237,13 +234,15 @@ esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration) // T
     esp_err_t status = ESP_ERR_WIFI_NOT_CONNECT;
     int connection_test_counter = 0;
     const TickType_t xDelay = 100 / portTICK_PERIOD_MS; 
-    while(status == ESP_ERR_WIFI_NOT_CONNECT && connection_test_counter < 20){
+    while(status == ESP_ERR_WIFI_NOT_CONNECT && connection_test_counter < 20)
+    {
         vTaskDelay( xDelay );
         ESP_LOGI(LOGGING_TAG, "CONNECTING TO AP ATTEMPT %d", connection_test_counter);
         status = esp_wifi_sta_get_ap_info(&configuration_holder.connected_ap_record);
         connection_test_counter++;
     }
-    if(status == ESP_OK){
+    if(status == ESP_OK)
+    {
         configuration_holder.wifi_connected_to_ap = true;
         return ESP_OK;
     }
@@ -254,7 +253,7 @@ esp_err_t setup_wpa_sta(wifi_sta_config_t station_connection_configuration) // T
 // Send Packet Methods
 // **************************************************
 // Sends a packet without any of the structuring provided by the component (raw)
-esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq)
+esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sys_seq) // LOC: 1
 {
     if(configuration_holder.wifi_interface_set != true)
     {
@@ -265,7 +264,7 @@ esp_err_t send_packet_raw_no_callback(const void* buffer, int length, bool en_sy
 }
 
 // Sends a packet conforming to the component provided wifi_mac_data_frame_t, along with running all enabled callbacks on the packet before sending.
-esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length) 
+esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length) // LOC: 12 (Counted check at top, callback execution lines, and send) 
 {
     int length = sizeof(wifi_mac_data_frame_t) + payload_length;
     if(configuration_holder.wifi_interface_set != true)
@@ -344,7 +343,7 @@ esp_err_t send_packet_simple(wifi_mac_data_frame_t* packet, int payload_length)
 }
 
 // This is an AP helper method to send a packet to a specific station, based on the target stations MAC address, with the component manages everything but the payload and finding the target stations MAC addr
-esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6])
+esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint8_t station_addr[6]) // LOC: 5 + 10 + 12 = 27 (alloc_packet_custom counted as 10)
 {
     if(configuration_holder.wifi_interface_set == false)
     {
@@ -371,21 +370,13 @@ esp_err_t send_payload_ap_to_station(uint8_t payload[], int payload_length, uint
 }
 
 // This is an AP helper method to broadcast a packet, with the component manages everything but the payload
-esp_err_t send_payload_ap_to_all_stations(uint8_t payload[], int payload_length)
+esp_err_t send_payload_ap_broadcast(uint8_t payload[], int payload_length) // LOC: 1 + 27 = 28
 {
-    if(configuration_holder.wifi_interface_set == false)
-    {
-        return ESP_ERR_WIFI_NOT_INIT;
-    }
-    if(configuration_holder.wifi_interface != WIFI_IF_AP)
-    {
-        return ESP_ERR_WIFI_MODE;
-    }
     return send_payload_ap_to_station(payload, payload_length, (uint8_t []){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
 } 
 
 // This is a station helper method for when connected to an AP for sending a payload to the AP, with the component managing the MAC address fiels and packet allocation.
-esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length)
+esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length) // LOC: 5 + 10 + 12 = 27
 {
     if(configuration_holder.wifi_interface_set == false || configuration_holder.wifi_connected_to_ap == false)
     {
@@ -412,7 +403,7 @@ esp_err_t send_payload_sta_to_access_point(uint8_t payload[], int payload_length
 }
 
 // This is a station helper method for sending a packet to a target MAC through the connected access point, with the component managing the AP and this ESP-32 address fields, and packet allocation.
-esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6])
+esp_err_t send_payload_sta_through_access_point(uint8_t payload[], int payload_length, uint8_t target_mac[6]) // LOC: 5 + 10 + 12 = 27
 {
     if(configuration_holder.wifi_interface_set == false || configuration_holder.wifi_connected_to_ap == false)
     {
@@ -712,7 +703,7 @@ esp_err_t remove_send_callback_payload()
 // **************************************************
 
 // This logs the given packet with annotations to help separate the specific values inside the packet.
-esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG)
+esp_err_t log_packet_annotated(wifi_mac_data_frame_t* packet, int payload_length, const char * TAG) // LOC: 15
 {
     ESP_LOGI(TAG, "Frame Control: %04X\nDuration_ID: %04X\nPacket Addr1: %02X:%02X:%02X:%02X:%02X:%02X\nAddr2: %02X:%02X:%02X:%02X:%02X:%02X\nAddr3 %02X:%02X:%02X:%02X:%02X:%02X\nSequence Control: %04X\nAddr4 %02X:%02X:%02X:%02X:%02X:%02X",
         packet->frame_control, packet->duration_id,
@@ -769,7 +760,7 @@ esp_err_t log_packet_hex(wifi_mac_data_frame_t* packet, int payload_length, cons
 
 // Helper method for creating/allocation a packet to send. This takes in values for each of the static fields and the payload, turning packet generation from a multi-line allocation into a single line method call.
 // The generated packet must be free'd upon completion of its use
-wifi_mac_data_frame_t* alloc_packet_custom(uint16_t frame_control, uint16_t duration_id, uint8_t address_1[6], uint8_t address_2[6], uint8_t address_3[6], uint16_t sequence_control, uint8_t address_4[6], int payload_length, uint8_t* payload)
+wifi_mac_data_frame_t* alloc_packet_custom(uint16_t frame_control, uint16_t duration_id, uint8_t address_1[6], uint8_t address_2[6], uint8_t address_3[6], uint16_t sequence_control, uint8_t address_4[6], int payload_length, uint8_t* payload) // LOC: 10
 {
     wifi_mac_data_frame_t* pkt = calloc(1, sizeof(wifi_mac_data_frame_t) + payload_length);
     pkt->frame_control = frame_control;
@@ -835,7 +826,7 @@ esp_err_t get_current_ap_mac(uint8_t mac_output_holder[6])
 
 // Helper method to get the MAC addresses of the connected stations when acting as an access point
 // The connected MACs are stored in 'station_macs_holder' and the number of stations is stored in 'number_valid_stations_holder'
-esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder) // Most stations anyways is 10, very little storage so get 10 always anyways
+esp_err_t get_current_ap_connected_sta_macs(uint8_t station_macs_holder[10][6], int* number_valid_stations_holder) // Most stations anyways is 10, very little storage so get 10 always anyways // LOC: 15
 {
     if(configuration_holder.wifi_interface_set == false)
     {

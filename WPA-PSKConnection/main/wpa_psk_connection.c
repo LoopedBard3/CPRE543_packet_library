@@ -27,7 +27,7 @@ static void ap_general_callback(wifi_mac_data_frame_t* packet, int payload_lengt
     // Set the mac address holder if we have not set it yet
     if(!mac_set)
     {
-        ESP_ERROR_CHECK(get_current_mac(mac));
+        ESP_ERROR_CHECK(get_current_mac(mac)); // LOC Saved: 0
         mac_set = true;
     }
 
@@ -36,7 +36,7 @@ static void ap_general_callback(wifi_mac_data_frame_t* packet, int payload_lengt
     && packet->address_1[3] == mac[3] && packet->address_1[4] == mac[4] && packet->address_1[5] == mac[5])
     {
         ESP_LOGI(LOGGING_TAG, "Packet Received For Us");
-        log_packet_annotated(packet, payload_length, LOGGING_TAG);
+        log_packet_annotated(packet, payload_length, LOGGING_TAG); // LOC Saved: 14
     }
 }
 
@@ -46,7 +46,7 @@ static void sta_general_callback(wifi_mac_data_frame_t* packet, int payload_leng
     // Set the mac address holder if we have not set it yet
     if(!mac_set)
     {
-        ESP_ERROR_CHECK(get_current_mac(mac));
+        ESP_ERROR_CHECK(get_current_mac(mac)); // LOC Saved: 0
         mac_set = true;
     }
 
@@ -55,7 +55,7 @@ static void sta_general_callback(wifi_mac_data_frame_t* packet, int payload_leng
     && packet->address_1[3] == mac[3] && packet->address_1[4] == mac[4] && packet->address_1[5] == mac[5])
     {
         ESP_LOGI(LOGGING_TAG, "Packet Received To Us");
-        log_packet_annotated(packet, payload_length, LOGGING_TAG);
+        log_packet_annotated(packet, payload_length, LOGGING_TAG); // LOC Saved: 14
     }
 
     // If the packet is a broadcast from the AP, log the packet with annotations
@@ -65,7 +65,7 @@ static void sta_general_callback(wifi_mac_data_frame_t* packet, int payload_leng
     && packet->address_2[3] == ap_mac[3] && packet->address_2[4] == ap_mac[4] && packet->address_2[5] == ap_mac[5])
     {
         ESP_LOGI(LOGGING_TAG, "Packet Received Broadcast");
-        log_packet_annotated(packet, payload_length, LOGGING_TAG);
+        log_packet_annotated(packet, payload_length, LOGGING_TAG); // LOC Saved: 14
     }
 }
 
@@ -88,13 +88,13 @@ static void wpa_psk_connection(void)
             .beacon_interval = 300
         };
         // Setup the ESP-32's wifi configuration to act as an AP, callback, and callback filter
-        ESP_ERROR_CHECK(setup_wifi_access_point_simple());
-        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&ap_general_callback)); // Option to turn on promiscuous listener
-        ESP_ERROR_CHECK(setup_wpa_ap(ap_config)); // Use the generated AP config to setup the device as an AP
+        ESP_ERROR_CHECK(setup_wifi_access_point_simple()); // LOC Saved: 10
+        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&ap_general_callback)); // Option to turn on promiscuous listener // LOC Saved: 1
+        ESP_ERROR_CHECK(setup_wpa_ap(ap_config)); // Use the generated AP config to setup the device as an AP // LOC Saved: 5
         wifi_promiscuous_filter_t packet_filter = {
             .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA
         };
-        ESP_ERROR_CHECK(setup_packets_type_filter(&packet_filter));
+        ESP_ERROR_CHECK(setup_packets_type_filter(&packet_filter)); // LOC Saved: 0
 
         // Setup loop to send a packet to the AP every 4 seconds
         bool packet_sent = false;
@@ -106,12 +106,12 @@ static void wpa_psk_connection(void)
             // If individual packet sending is enabled, send them
             if(APSENDINDIVIDUAL)
             {
-                ESP_ERROR_CHECK(get_current_ap_connected_sta_macs(sta_macs_holder, &connected_stas_count)); // Get the list of the currently connected stations MAC addresses
+                ESP_ERROR_CHECK(get_current_ap_connected_sta_macs(sta_macs_holder, &connected_stas_count)); // Get the list of the currently connected stations MAC addresses // LOC Saved: 14
                 int counter = 0;
                 for(counter = 0; counter < connected_stas_count; counter++)
                 {
                     // For each connected station, send it a payload
-                    ESP_ERROR_CHECK(send_payload_ap_to_station(payload, payload_length, sta_macs_holder[counter]));
+                    ESP_ERROR_CHECK(send_payload_ap_to_station(payload, payload_length, sta_macs_holder[counter])); // LOC Saved: 26
                     packet_sent = true;
                 }
             }
@@ -119,7 +119,7 @@ static void wpa_psk_connection(void)
             if(APSENDBROADCAST && connected_stas_count > 0)
             {
                 packet_sent = true;
-                ESP_ERROR_CHECK(send_payload_ap_to_all_stations(payload, payload_length)); // This sends the payload as a broadcast packet (target address 0xFF:FF:FF:FF:FF:FF)
+                ESP_ERROR_CHECK(send_payload_ap_broadcast(payload, payload_length)); // This sends the payload as a broadcast packet (target address 0xFF:FF:FF:FF:FF:FF) // LOC Saved: 27
             }
             // If a packet is sent, log that we sent something
             if(packet_sent)
@@ -144,16 +144,16 @@ static void wpa_psk_connection(void)
         };
 
         // Setup the ESP-32's wifi configuration to act as a station, callback, and callback filter
-        ESP_ERROR_CHECK(setup_wifi_station_simple());
-        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&sta_general_callback)); // Option to turn on promiscuous listener
-        ESP_ERROR_CHECK(setup_wpa_sta(sta_config)); // Use the generated station config to setup the device as an station
+        ESP_ERROR_CHECK(setup_wifi_station_simple()); // LOC Saved: 10
+        ESP_ERROR_CHECK(setup_promiscuous_simple_with_general_callback(&sta_general_callback)); // Option to turn on promiscuous listener // LOC Saved: 1
+        ESP_ERROR_CHECK(setup_wpa_sta(sta_config)); // Use the generated station config to setup the device as an station // LOC Saved: 14
         wifi_promiscuous_filter_t packet_filter = {
             .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA
         };
-        ESP_ERROR_CHECK(setup_packets_type_filter(&packet_filter));
+        ESP_ERROR_CHECK(setup_packets_type_filter(&packet_filter)); // LOC Saved: 0
         
         // Get the mac address of the AP
-        ESP_ERROR_CHECK(get_current_ap_mac(ap_mac));
+        ESP_ERROR_CHECK(get_current_ap_mac(ap_mac)); // LOC Saved: 0
 
         // Setup loop to send a packet to the AP every 4 seconds
         uint8_t payload[8] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
@@ -161,7 +161,7 @@ static void wpa_psk_connection(void)
         const TickType_t xDelay = 4000 / portTICK_PERIOD_MS; 
         while(true){
             // Actually send the packet
-            ESP_ERROR_CHECK(send_payload_sta_to_access_point(payload, payload_length));
+            ESP_ERROR_CHECK(send_payload_sta_to_access_point(payload, payload_length)); // LOC Saved: 26
             ESP_LOGI(LOGGING_TAG, "STATION PACKET SENT");
             // Wait 4000ms
             vTaskDelay( xDelay );
